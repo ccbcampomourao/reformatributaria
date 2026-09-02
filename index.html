@@ -563,18 +563,18 @@
   </section>
 
   <div class="footnote">
-    Base legal: Lei Complementar nº 214/2025 (IBS, CBS e Imposto Seletivo), Lei Complementar nº 227/2026 (Comitê Gestor do IBS) e Resoluções CGSN nº 186/2026 e nº 190/2026 (regras do Simples Nacional na transição). As faixas, alíquotas nominais, parcelas a deduzir e o percentual de repartição dos tributos usados no cálculo seguem as tabelas oficiais dos Anexos I a V da LC 123/2006, publicadas pela Receita Federal (normas.receita.fazenda.gov.br), sem considerar o "fator R" do Anexo V nem os ajustes de redistribuição do ISS/ICMS acima de 5% na 5ª faixa dos Anexos III, IV e V. IRPJ e CSLL não são alterados pela reforma do consumo — ela trata apenas dos tributos que davam origem a ICMS, ISS, PIS, COFINS e IPI.
+    Base legal: Lei Complementar nº 214/2025 (IBS, CBS e Imposto Seletivo), Lei Complementar nº 227/2026 (Comitê Gestor do IBS) e Resoluções CGSN nº 186/2026 e nº 190/2026 (regras do Simples Nacional na transição). As faixas, alíquotas nominais, parcelas a deduzir e o percentual de repartição dos tributos usados no cálculo seguem as tabelas oficiais dos Anexos I a V da LC 123/2006, publicadas pela Receita Federal (normas.receita.fazenda.gov.br), sem considerar o "fator R" do Anexo V nem os ajustes de redistribuição do ISS/ICMS acima de 5% na 5ª faixa dos Anexos III, IV e V. O tratamento da substituição tributária/retenção segue o art. 25, §1º, "b" da Resolução CGSN nº 94/2011 (atual art. 28, §4º da Resolução CGSN nº 140/2018): desconsidera-se apenas o percentual de ICMS/ISS daquela parcela de receita, sem redistribuir esse percentual para os demais tributos. Não estão implementados os regimes de monofasia (que passam a zerar CBS em vez de PIS/COFINS a partir de 2027) nem a segregação de receitas de exportação. IRPJ e CSLL não são alterados pela reforma do consumo.
   </div>
 
 </div>
 
 <script>
 const colors = {
-  pis:'#8C3B2E', cofins:'#B8892B', irpj:'#1B4332', csll:'#2F6B4F', cpp:'#4A5A4F', icms:'#6B5B95', ipi:'#C97B3D'
+  pis:'#8C3B2E', cofins:'#B8892B', irpj:'#1B4332', csll:'#2F6B4F', cpp:'#4A5A4F', icms:'#6B5B95', ipi:'#C97B3D', iss:'#3D6B8C'
 };
-const labels = {pis:'PIS', cofins:'COFINS', irpj:'IRPJ', csll:'CSLL', cpp:'CPP', icms:'ICMS/ISS', ipi:'IPI'};
+const labels = {pis:'PIS', cofins:'COFINS', irpj:'IRPJ', csll:'CSLL', cpp:'CPP', icms:'ICMS', ipi:'IPI', iss:'ISS'};
 
-const keys = ['pis','cofins','irpj','csll','cpp','icms','ipi'];
+const keys = ['pis','cofins','irpj','csll','cpp','icms','ipi','iss'];
 
 // Tabelas do Simples Nacional (LC 123/2006, Anexos I a V) — faixa: [tetoRBT12, aliquotaNominal, parcelaDeduzir]
 const tabelasSimples = {
@@ -632,6 +632,26 @@ const repartTributos = {
   ],
 };
 
+// Tabela de redução de ICMS do Paraná para o Simples Nacional (Anexo XI do RICMS/PR, Tabela I — comércio)
+// faixa: [tetoRBT12, aliquotaNominalPR, parcelaDeduzirPR] — 0 = isenção total
+const tabelaICMS_PR = [
+  [180000, 0, 0],
+  [360000, 0, 0],
+  [720000, 0.031825, 11457.00],
+  [1800000, 0.035845, 14351.40],
+  [3600000, 0.047905, 36059.40],
+  [4800000, null, null], // acima do sublimite: ICMS já sai do DAS pela regra nacional
+];
+function calcReducaoICMS_PR(rbt12, aliqEfNacionalICMS){
+  if(rbt12 <= 360000) return 1; // isenção total
+  let idx = tabelaICMS_PR.length-1;
+  for(let i=0;i<tabelaICMS_PR.length;i++){ if(rbt12<=tabelaICMS_PR[i][0]){ idx=i; break; } }
+  const [teto, aliqPR, pdPR] = tabelaICMS_PR[idx];
+  if(aliqPR === null || aliqEfNacionalICMS <= 0) return 0;
+  const aliqEfPR = (rbt12*aliqPR - pdPR)/rbt12;
+  const reducao = 1 - (Math.max(aliqEfPR,0) / aliqEfNacionalICMS);
+  return Math.min(Math.max(reducao, 0), 1);
+}
 let anexoIdCounter = 0;
 let anexos = []; // {id, codigo, months:[12 valores]}
 
@@ -640,7 +660,10 @@ function novoAnexo(codigo, valorMes){
   return {
     id: anexoIdCounter,
     codigo: codigo,
-    months: new Array(12).fill(valorMes)
+    months: new Array(12).fill(valorMes),
+    stValue: 0,
+    reducaoPR: false,
+    reducaoPRManual: null
   };
 }
 
@@ -682,7 +705,60 @@ function buildAnexosUI(){
       grid.appendChild(div);
     });
     card.appendChild(grid);
+
+    const stWrap = document.createElement('div');
+    stWrap.className = 'field';
+    stWrap.style.marginTop = '14px';
+    stWrap.style.marginBottom = '0';
+    const rotuloST = (anx.codigo==='IV') ? 'Faturamento do mês com ISS retido na fonte (R$)' : 'Faturamento do mês com substituição tributária de ICMS / monofásico (R$)';
+    stWrap.innerHTML = '<label>'+rotuloST+'</label>'+
+      '<input type="number" min="0" step="500" value="'+anx.stValue+'" data-id="'+anx.id+'" class="stInput">'+
+      '<div class="hint">Essa parcela da receita do mês atual já teve o ICMS/ISS recolhido antes na cadeia (ou retido na fonte) — por isso a fatia desse tributo é desconsiderada só para ela, mantendo os demais (IRPJ, CSLL, COFINS, PIS, CPP).</div>';
+    card.appendChild(stWrap);
+
+    if(anx.codigo === 'I'){
+      const prWrap = document.createElement('div');
+      prWrap.className = 'field';
+      prWrap.style.marginTop = '10px';
+      prWrap.style.marginBottom = '0';
+      prWrap.innerHTML = '<label style="display:flex; align-items:center; gap:8px; font-size:12.5px;">'+
+        '<input type="checkbox" data-id="'+anx.id+'" class="prCheckbox" '+(anx.reducaoPR?'checked':'')+' style="width:auto;">'+
+        'Aplicar redução automática de ICMS do Paraná (Anexo XI do RICMS/PR) na receita sem ST'+
+        '</label>'+
+        '<div class="hint">Confirmado batendo 100% com PGDAS-D real até dez/2025. A partir de 2026 a tabela pode ter sido atualizada e o cálculo automático pode divergir — se tiver o % exato do seu PGDAS-D do mês, prefira digitar abaixo.</div>'+
+        '<div style="margin-top:8px;">'+
+          '<label style="font-size:11.5px; color:var(--ink-soft);">% de redução exato do PGDAS-D (opcional, sobrepõe o cálculo automático)</label>'+
+          '<input type="number" min="0" max="100" step="0.01" placeholder="Ex: 64.40" value="'+(anx.reducaoPRManual!==null?anx.reducaoPRManual:'')+'" data-id="'+anx.id+'" class="prManualInput">'+
+        '</div>';
+      card.appendChild(prWrap);
+    }
+
     container.appendChild(card);
+  });
+
+  container.querySelectorAll('.stInput').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
+      anx.stValue = parseFloat(e.target.value) || 0;
+      update();
+    });
+  });
+
+  container.querySelectorAll('.prCheckbox').forEach(chk=>{
+    chk.addEventListener('change', (e)=>{
+      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
+      anx.reducaoPR = e.target.checked;
+      update();
+    });
+  });
+
+  container.querySelectorAll('.prManualInput').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
+      const v = e.target.value;
+      anx.reducaoPRManual = v === '' ? null : parseFloat(v);
+      update();
+    });
   });
 
   container.querySelectorAll('.anexoSelect').forEach(sel=>{
@@ -768,13 +844,45 @@ function update(){
   breakdownBody.innerHTML = '';
   anexos.forEach((anx, idx)=>{
     const fatMesAnx = anx.months[11];
+    const stValue = Math.min(anx.stValue || 0, fatMesAnx);
     const {aliqEfetiva, faixaIdx} = calcAliquotaEfetiva(rbt12, anx.codigo);
-    const dasAnx = fatMesAnx * aliqEfetiva;
-    dasTotal += dasAnx;
     const repart = repartTributos[anx.codigo][faixaIdx];
-    keys.forEach(k=>{ atual[k] += dasAnx * (repart[k]/100); });
+
+    // A fatia de ICMS/ISS só incide sobre a receita SEM substituição tributária/retenção;
+    // os demais tributos (IRPJ, CSLL, COFINS, PIS, CPP) continuam incidindo sobre o faturamento total,
+    // sem serem "inflados" para compensar o ICMS retirado — é isso que a regra do CGSN determina.
+    const fatSemST = fatMesAnx - stValue;
+    let icmsAnx = fatSemST * aliqEfetiva * (repart.icms/100);
+    let reducaoPRAplicada = 0;
+    if(anx.codigo === 'I' && anx.reducaoPRManual !== null && anx.reducaoPRManual !== undefined && !isNaN(anx.reducaoPRManual)){
+      reducaoPRAplicada = Math.min(Math.max(anx.reducaoPRManual/100, 0), 1);
+      icmsAnx = icmsAnx * (1 - reducaoPRAplicada);
+    } else if(anx.reducaoPR && anx.codigo === 'I'){
+      const aliqEfIcmsNacional = aliqEfetiva * (repart.icms/100);
+      reducaoPRAplicada = calcReducaoICMS_PR(rbt12, aliqEfIcmsNacional);
+      icmsAnx = icmsAnx * (1 - reducaoPRAplicada);
+    }
+    let outrosAnx = 0;
+    const ehServico = (anx.codigo === 'III' || anx.codigo === 'IV' || anx.codigo === 'V');
+    keys.forEach(k=>{
+      if(k === 'icms'){
+        if(!ehServico) atual.icms += icmsAnx; // Anexo I/II: fatia é ICMS de verdade
+      } else if(k === 'iss'){
+        if(ehServico) atual.iss += icmsAnx; // Anexo III/IV/V: a mesma fatia é ISS, não ICMS
+      } else {
+        const valorTributo = fatMesAnx * aliqEfetiva * (repart[k]/100);
+        atual[k] += valorTributo;
+        outrosAnx += valorTributo;
+      }
+    });
+    const dasAnx = icmsAnx + outrosAnx;
+    dasTotal += dasAnx;
+
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td>Atividade '+(idx+1)+' — '+nomesAnexo[anx.codigo]+'</td>'+
+    tr.innerHTML = '<td>Atividade '+(idx+1)+' — '+nomesAnexo[anx.codigo]+
+      (stValue>0?' <span style="color:var(--ink-soft); font-size:11px;">(R$ '+stValue.toLocaleString('pt-BR',{maximumFractionDigits:0})+' c/ ST)</span>':'')+
+      (reducaoPRAplicada>0?' <span style="color:var(--forest); font-size:11px;">(redução ICMS-PR: '+fmtPct(reducaoPRAplicada*100,2)+')</span>':'')+
+      '</td>'+
       '<td style="text-align:right;">'+nomesFaixa[faixaIdx]+'</td>'+
       '<td style="text-align:right;">'+fmtPct(aliqEfetiva*100,2)+'</td>'+
       '<td style="text-align:right;">'+fmt(fatMesAnx)+'</td>'+
@@ -814,10 +922,10 @@ function update(){
     ? 'Repartição proporcional às alíquotas: R$ '+creditoCbs.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de crédito de CBS + R$ '+creditoIbs.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de crédito de IBS.'
     : '';
 
-  // Modelo A: dentro do DAS -> por lei, a apuração NÃO muda; PIS+COFINS+IPI viram CBS e ICMS/ISS vira IBS
+  // Modelo A: dentro do DAS -> por lei, a apuração NÃO muda; PIS+COFINS+IPI viram CBS e ICMS+ISS viram IBS
   // pelos MESMOS valores já embutidos na alíquota efetiva atual (sem aplicar a alíquota de referência)
   const cbsA = atual.pis + atual.cofins + atual.ipi;
-  const ibsA = atual.icms;
+  const ibsA = atual.icms + atual.iss;
   const totalA = atual.irpj + atual.csll + atual.cpp + cbsA + ibsA;
 
   // Modelo B: híbrido -> débito (fat * aliq) - crédito informado em R$; IRPJ/CSLL/CPP continuam como hoje (no DAS)
@@ -833,13 +941,14 @@ function update(){
     {label:'PIS', atual: atual.pis, a:null, b:null, out:true},
     {label:'COFINS', atual: atual.cofins, a:null, b:null, out:true},
     {label:'IPI', atual: atual.ipi, a:null, b:null, out: atual.ipi>0},
-    {label:'ICMS/ISS', atual: atual.icms, a:null, b:null, out:true},
+    {label:'ICMS', atual: atual.icms, a:null, b:null, out: atual.icms>0},
+    {label:'ISS', atual: atual.iss, a:null, b:null, out: atual.iss>0},
     {label:'CPP', atual: atual.cpp, a: atual.cpp, b: atual.cpp},
     {label:'IRPJ', atual: atual.irpj, a: atual.irpj, b: atual.irpj},
     {label:'CSLL', atual: atual.csll, a: atual.csll, b: atual.csll},
     {label:'CBS', atual: null, a: cbsA, b: cbsB, inNew:true},
     {label:'IBS', atual: null, a: ibsA, b: ibsB, inNew:true},
-  ].filter(r => !(r.label==='IPI' && atual.ipi===0));
+  ].filter(r => !((r.label==='IPI'&&atual.ipi===0) || (r.label==='ICMS'&&atual.icms===0) || (r.label==='ISS'&&atual.iss===0)));
 
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
