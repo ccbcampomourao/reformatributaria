@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comparador · Simples Nacional × IBS/CBS</title>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
@@ -406,10 +408,154 @@
     border-top:1px solid var(--paper-line);
     padding-top:14px;
   }
+
+  .layout{display:flex;align-items:flex-start;}
+  .layout .wrap{flex:1;min-width:0;}
+  #sidebar{position:sticky;top:0;width:214px;flex:0 0 214px;height:100vh;overflow-y:auto;background:var(--forest-deep);color:#fff;padding:18px 12px;font-size:12px;}
+  .side-h{font-family:'Source Serif 4',serif;font-size:13px;color:var(--gold);margin:6px 6px 8px;}
+  .tab{display:block;width:100%;text-align:left;background:none;border:0;border-left:3px solid transparent;color:rgba(255,255,255,.85);font-family:inherit;font-size:12px;padding:7px 9px;margin-bottom:2px;cursor:pointer;border-radius:2px;}
+  .tab small{display:block;color:rgba(255,255,255,.55);font-size:10.5px;line-height:1.35;}
+  .tab:hover{background:rgba(255,255,255,.06);}
+  .tab.active{background:rgba(255,255,255,.12);border-left-color:var(--gold);color:#fff;}
+  .side-btn{display:block;width:100%;text-align:center;margin-top:8px;padding:9px 6px;border:1px solid var(--gold);background:none;color:var(--gold-soft);font-family:inherit;font-size:12px;cursor:pointer;border-radius:2px;}
+  .side-btn:hover{background:rgba(184,137,43,.2);}
+  @media (max-width:760px){.layout{flex-direction:column;}#sidebar{position:static;width:100%;height:auto;flex:none;}#tabList{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}}
+
+  /* ===== Refinamento visual ===== */
+  :root{--shadow:0 1px 2px rgba(15,46,34,.06),0 6px 18px rgba(15,46,34,.06);}
+  body{background:linear-gradient(180deg,#F7F6F2,#EFECE1) fixed;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;}
+  .layout .wrap{padding:0 32px;}
+  header.masthead{border:0;border-radius:14px;padding:30px 34px;margin:26px 0 28px;background:linear-gradient(135deg,var(--forest-deep),var(--forest));box-shadow:var(--shadow);}
+  header.masthead .kicker{color:var(--gold-soft);font-weight:600;letter-spacing:.07em;text-transform:uppercase;font-size:11px;}
+  header.masthead h1{color:#fff;font-size:29px;line-height:1.22;max-width:none;}
+  header.masthead p{color:rgba(255,255,255,.78);max-width:700px;}
+  section{background:#fff;border:1px solid var(--paper-line);border-radius:12px;padding:24px 28px;margin-bottom:24px;box-shadow:var(--shadow);}
+  .section-title{margin-bottom:20px;}
+  .section-title h2{font-size:21px;}
+  .section-title .note{margin-left:auto;background:var(--gold-soft);color:#5C4A1F;padding:2px 10px;border-radius:999px;font-size:11px;}
+  section div[style*="background:#fff" i]{background:#FBFAF6 !important;}
+  .anexo-card,.scenario-card,.rbt12-summary{background:#FBFAF6;border-radius:10px;}
+  .anexo-card{border-left:4px solid var(--forest);}
+  .rbt12-summary{gap:32px;}
+  input[type=text],input[type=month],input[type=number],select,.month-field input{border-radius:6px;transition:border-color .15s,box-shadow .15s;}
+  input:focus,select:focus{outline:none;border-color:var(--forest) !important;box-shadow:0 0 0 3px rgba(27,67,50,.16);}
+  input[readonly]{color:var(--forest-deep);cursor:default;}
+  .toggle-btn{border-radius:8px;padding:10px 8px;line-height:1.4;transition:all .15s;}
+  .toggle-btn:hover{border-color:var(--forest);}
+  .split-bar{height:38px;border-radius:8px;}
+  .add-anexo-btn,.anexo-remove-btn{border-radius:8px;transition:background .15s;}
+  table{border-radius:8px;}
+  thead th{background:#F1F6F3;padding:10px 10px;}
+  thead th:first-child{border-top-left-radius:6px;}
+  thead th:last-child{border-top-right-radius:6px;}
+  tbody td{padding:10px 10px;}
+  tbody tr:not(.total):hover td{background:#FAF8F1;}
+  .scenario-card{border-top:4px solid var(--forest);box-shadow:var(--shadow);padding:22px;}
+  .scenario-card:nth-child(2){border-top-color:var(--gold);}
+  .scenario-card .figure{font-size:36px;}
+  .delta{border-radius:999px;padding:5px 12px;font-weight:600;}
+  .disclaimer{border-radius:0 8px 8px 0;line-height:1.6;}
+  .footnote{margin-bottom:24px;line-height:1.6;}
+  .months-grid{gap:12px;}
+  .month-field label{font-weight:500;text-transform:capitalize;}
+  #sidebar{display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,var(--forest-deep),#0B2319);box-shadow:2px 0 16px rgba(0,0,0,.14);z-index:5;}
+  #tabList{flex:1;min-height:0;overflow-y:auto;padding-right:2px;}
+  #tabList::-webkit-scrollbar{width:6px;}
+  #tabList::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px;}
+  .side-brand{font-family:'Source Serif 4',serif;font-size:17px;font-weight:700;line-height:1.25;padding:2px 6px 14px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.14);}
+  .side-brand span{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:10.5px;color:var(--gold-soft);margin-top:4px;}
+  .side-foot{padding-top:10px;margin-top:8px;border-top:1px solid rgba(255,255,255,.14);}
+  .tab{border-radius:6px;transition:background .15s;}
+  .side-btn{border-radius:6px;}
+  .month-nav{display:flex;justify-content:space-between;gap:12px;margin:0 0 28px;}
+  .nav-btn{padding:11px 20px;border:1px solid var(--forest);background:#fff;color:var(--forest);font-family:inherit;font-size:13px;border-radius:8px;cursor:pointer;transition:background .15s;}
+  .nav-btn:hover{background:#F1F6F3;}
+  .nav-btn.primary{background:var(--forest);color:#fff;}
+  .nav-btn.primary:hover{background:var(--forest-deep);}
+  @media (max-width:760px){
+    .layout .wrap{padding:0 14px;}
+    #sidebar{position:static;width:100%;height:auto;flex:none;overflow:visible;}
+    #tabList{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;overflow:visible;}
+    header.masthead{padding:22px 20px;}
+    header.masthead h1{font-size:23px;}
+    section{padding:18px 16px;overflow-x:auto;}
+    table{min-width:520px;}
+  }
+
+  /* ===== Impressão / PDF ===== */
+  #printRoot{display:none;}
+  @media print{
+    @page{size:A4;margin:12mm 10mm;}
+    html,body{background:#fff !important;padding:0 !important;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .layout{display:none !important;}
+    #printRoot{display:block;zoom:.9;}
+    #printRoot section{box-shadow:none;padding:14px 16px;margin-bottom:12px;overflow:visible;break-inside:avoid;page-break-inside:avoid;}
+    #printRoot .p-cover{break-after:page;page-break-after:always;}
+    #printRoot .p-month + .p-month{break-before:page;page-break-before:always;}
+    #printRoot .grid2{grid-template-columns:1fr;}
+    #printRoot .scenario-cards{grid-template-columns:1fr 1fr;}
+    #printRoot table{min-width:0;break-inside:avoid;page-break-inside:avoid;}
+    #printRoot tr,#printRoot .scenario-card,#printRoot .rbt12-summary,#printRoot .disclaimer,#printRoot .split-bar{break-inside:avoid;page-break-inside:avoid;}
+    #printRoot thead{display:table-header-group;}
+    #printRoot .section-title,#printRoot h2,#printRoot h3{break-after:avoid;page-break-after:avoid;}
+    #printRoot tbody tr:hover td{background:none;}
+  }
+
+  .scenario-cards.three{grid-template-columns:repeat(3,1fr);}
+  .scenario-cards.three .figure{font-size:26px;}
+  .scenario-card:nth-child(3){border-top-color:var(--green-credit);}
+  @media (max-width:760px){.scenario-cards.three{grid-template-columns:1fr;}}
+  @media print{
+    #printRoot .scenario-cards.three{grid-template-columns:repeat(3,1fr);}
+    #printRoot .scenario-cards.three .figure{font-size:19px;}
+    #printRoot .scenario-cards.three .desc{font-size:11px;}
+  }
+
+  .field input[type=text]{width:100%;padding:9px 10px;border:1px solid var(--paper-line);background:#fff;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);border-radius:6px;}
+  .field label.chk{display:inline-flex;justify-content:flex-start;align-items:center;gap:8px;margin:2px 22px 0 0;font-weight:600;cursor:pointer;}
+  .chk input{width:18px;height:18px;accent-color:var(--forest);cursor:pointer;}
+
+  /* ===== Correção de quebras e sobreposições ===== */
+  section{overflow-x:auto;}
+  tbody td{white-space:nowrap;}
+  tbody td:first-child{white-space:normal;min-width:90px;}
+  thead th{vertical-align:bottom;line-height:1.3;}
+  .rbt12-summary .num,.scenario-card .figure{white-space:nowrap;}
+  .scenario-card .figure small{white-space:normal;}
+  .rbt12-summary{align-items:flex-start;}
+  .section-title{flex-wrap:wrap;row-gap:6px;}
+  .section-title .note{margin-left:auto;white-space:nowrap;}
+  .field label{gap:12px;}
+  @media print{
+    #printRoot tbody td{white-space:normal;padding:6px 5px;font-size:11px;}
+    #printRoot thead th{padding:6px 5px;font-size:10.5px;}
+    #printRoot .rbt12-summary{gap:18px;}
+  }
+
+  /* ===== Quebras de linha controladas ===== */
+  thead th{white-space:nowrap;}
+  .scenario-card .figure small{white-space:nowrap;}
+  .delta{border-radius:12px;line-height:1.45;}
+  .side-btn{white-space:nowrap;}
 </style>
 </head>
 <body>
 
+<div class="layout">
+<aside id="sidebar">
+  <div class="side-brand">Comparador<span>Simples Nacional × IBS/CBS</span></div>
+  <div class="side-h">Períodos</div>
+  <div id="tabList"></div>
+  <div class="side-foot"><div class="side-h" style="margin-top:0;">Relatório PDF</div>
+  <button type="button" id="pdfMes" class="side-btn">📄 Mês atual</button>
+  <button type="button" id="pdfAno" class="side-btn">📄 Relatório 12 meses</button>
+  <div class="side-h" style="margin-top:14px;">Dados</div>
+  <button type="button" id="saveJson" class="side-btn">⬇ Salvar JSON</button>
+  <label for="loadJson" class="side-btn">⬆ Carregar JSON</label>
+  <input type="file" id="loadJson" accept="application/json,.json" style="display:none;">
+  <div id="jsonStatus" style="font-size:11px;margin-top:8px;min-height:14px;"></div></div>
+</aside>
 <div class="wrap">
 
   <header class="masthead">
@@ -418,16 +564,75 @@
     <p>Ajuste os campos abaixo com os números da empresa para comparar a carga apurada hoje dentro do DAS com os dois caminhos possíveis a partir de 2027: permanecer com IBS/CBS "por dentro" do DAS ou migrar para o regime híbrido ("por fora"), com débito e crédito.</p>
   </header>
 
+  <div id="histView" style="display:none;">
+    <section>
+      <div class="section-title"><h2>Histórico · 12 meses anteriores</h2><span class="note">base do RBT12</span></div>
+      <div class="field" style="max-width:240px;">
+        <label>Primeiro mês de apuração</label>
+        <input type="month" id="mesInicial" value="2027-01" style="width:100%;padding:9px 10px;border:1px solid var(--paper-line);background:#fff;font-family:inherit;font-size:14px;">
+      </div>
+      <div class="field"><label>Faturamento total (todas as atividades) de cada mês anterior</label></div>
+      <div class="months-grid" id="histGrid"></div>
+      <div class="rbt12-summary"><div class="item"><div class="lbl">RBT12 inicial (soma dos 12 meses)</div><div class="num" id="histSum">R$ 0</div></div></div>
+      <div class="hint" style="margin-top:12px;">Informe só estes 12 meses. O RBT12 de cada mês seguinte é calculado automaticamente: a cada mês, sai o mais antigo e entra o faturamento do mês anterior lançado nas abas laterais.</div>
+    </section>
+  </div>
+
+<div id="mesView">
+<div id="mesTitulo" style="font-family:'Source Serif 4',serif;font-size:22px;font-weight:600;color:var(--forest-deep);margin-bottom:18px;"></div>
   <section>
     <div class="section-title">
       <h2>1 · Atividades (Anexos) e faturamento</h2>
       <span class="note">o que já é apurado hoje</span>
     </div>
 
+    <div style="background:var(--forest-deep); color:#fff; border-radius:10px; padding:18px 22px; margin-bottom:24px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+      <div style="max-width:560px;">
+        <div style="font-weight:600; font-size:14.5px; display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+          Importar Declaração PGDAS-D (PDF)
+        </div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.8); margin-top:4px;">
+          Carregue o PDF da sua declaração do Simples Nacional para preencher o <strong>RBT12</strong>, as <strong>atividades</strong> e o <strong>faturamento do mês</strong> automaticamente.
+        </div>
+      </div>
+      <div>
+        <label for="pgdasPdfInput" style="background:var(--gold); color:#16241C; padding:9px 18px; border-radius:6px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background 0.2s;">
+          Selecionar PDF
+        </label>
+        <input type="file" id="pgdasPdfInput" accept="application/pdf" style="display:none;">
+        <span id="pdfStatus" style="display:block; font-size:11.5px; color:var(--gold-soft); margin-top:6px; text-align:right;"></span>
+      </div>
+    </div>
+
+    <!-- Campo Global de RBT12 -->
+    <div style="background:#FFF; border:1px solid var(--paper-line); border-radius:8px; padding:18px 20px; margin-bottom:20px;">
+      <div class="field" style="margin-bottom:0;">
+        <label style="font-weight:600; font-size:14px; color:var(--forest-deep);">
+          RBT12 do mês (soma dos 12 meses anteriores — calculado automaticamente)
+        </label>
+        <div style="display:flex; align-items:center; gap:12px; margin-top:6px;">
+          <span style="font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; color:var(--ink-soft);">R$</span>
+          <input type="text" id="globalRbt12Input" value="0,00" readonly style="background:#F1F6F3; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; width:220px;">
+        </div>
+        <div class="hint" style="margin-top:6px;">
+          Soma do faturamento dos 12 meses anteriores a este mês (histórico informado na aba "Histórico" + meses já lançados). Para alterá-lo, edite o histórico ou o faturamento dos meses anteriores.
+        </div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label style="font-weight:600; font-size:13.5px;">Atividades e Faturamento do Mês Atual (Apurado)</label>
+    </div>
+
     <div id="anexosContainer"></div>
     <button type="button" id="addAnexoBtn" class="add-anexo-btn">+ Adicionar atividade / Anexo</button>
 
-    <div class="hint" style="margin-top:12px;">O RBT12 é único para a empresa toda (soma de todas as atividades, nos 12 meses). Cada Anexo, porém, usa sua própria tabela de alíquota nominal e parcela a deduzir — por isso o mesmo RBT12 pode gerar alíquotas efetivas diferentes por atividade.</div>
+    <div class="hint" style="margin-top:12px;">
+      O <strong>RBT12</strong> é único para a empresa toda (soma de todas as atividades, nos 12 meses). Cada Anexo usa sua tabela oficial da LC 123/2006. 
+      Para atividades <strong>Com ST de ICMS</strong>, a cobrança de ICMS é automaticamente zerada no DAS. 
+      Para o <strong>Paraná (PR)</strong>, a <strong>redução de ICMS da Lei Estadual nº 15.562/2007 é calculada e aplicada 100% de forma automática</strong> conforme a faixa do RBT12 (isenção total até R$ 360 mil, progressiva até R$ 480 mil e alíquota especial de ICMS nas faixas seguintes).
+    </div>
 
     <div class="rbt12-summary" style="margin-top:16px;">
       <div class="item">
@@ -442,6 +647,10 @@
         <div class="lbl">DAS estimado do mês</div>
         <div class="num" id="dasTotalVal">R$ 0</div>
       </div>
+      <div class="item">
+        <div class="lbl">Alíquota efetiva total</div>
+        <div class="num" id="aliqTotalVal">0,00%</div>
+      </div>
     </div>
 
     <table style="margin-top:16px;">
@@ -449,8 +658,8 @@
         <tr>
           <th>Atividade / Anexo</th>
           <th>Faixa</th>
-          <th>Alíquota efetiva</th>
-          <th>Faturamento do mês</th>
+          <th>Alíquota<br>efetiva</th>
+          <th>Faturamento<br>do mês</th>
           <th>DAS do mês</th>
         </tr>
       </thead>
@@ -499,12 +708,31 @@
         </div>
       </div>
     </div>
-    <div class="field">
-      <label>Créditos de IBS/CBS apurados no mês (R$)</label>
-      <input type="number" id="creditoRS" min="0" step="100" value="8000" placeholder="Ex: 3200">
-      <div class="hint">Só é usado no cenário "Regime híbrido" — informe o valor em reais dos créditos de IBS/CBS já apurados nas compras e insumos do mês (o total de IBS + CBS destacado nas notas de entrada). <strong>Se deixar em R$ 0, os Modelos A e B dão o mesmo resultado</strong> — o híbrido só fica mais barato quando há crédito a abater; o Modelo A, dentro do DAS, não desconta créditos.</div>
-      <div class="hint" id="creditoSplitHint" style="margin-top:6px; color:var(--forest);"></div>
+    <div style="background:#FBFAF6;border:1px solid var(--paper-line);border-radius:10px;padding:16px 18px;margin-top:20px;">
+      <div class="field" style="margin-bottom:14px;">
+        <label>Valor total das entradas do mês (R$)</label>
+        <input type="text" id="entradasRS" value="0,00" class="money-input" style="max-width:240px;text-align:right;">
+        <div class="hint">Soma das compras e insumos do mês que dão direito a crédito.</div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Este mês gera crédito de:</label>
+        <div><label class="chk"><input type="checkbox" id="credCbsChk" checked> CBS</label><label class="chk"><input type="checkbox" id="credIbsChk" checked> IBS</label></div>
+        <div class="hint">O crédito é calculado automaticamente: entradas × alíquota de CBS e/ou IBS escolhida acima.</div>
+      </div>
     </div>
+    <div class="grid2" style="margin-top:16px;">
+      <div class="field">
+        <label>Crédito de CBS no mês (calculado)</label>
+        <input type="text" id="creditoCbsRS" value="0,00" readonly style="background:#F1F6F3;">
+        <div class="hint">Entradas × alíquota de CBS, se a caixa CBS estiver marcada.</div>
+      </div>
+      <div class="field">
+        <label>Crédito de IBS no mês (calculado)</label>
+        <input type="text" id="creditoIbsRS" value="0,00" readonly style="background:#F1F6F3;">
+        <div class="hint">Entradas × alíquota de IBS, se a caixa IBS estiver marcada.</div>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:4px;">Se o crédito (do mês + saldo dos meses anteriores) exceder o imposto devido, o excedente passa automaticamente para o mês seguinte, e assim por diante. Só é usado no cenário <strong>"Regime híbrido (Modelo B)"</strong>. No Modelo A (dentro do DAS), a tributação é simplificada e não desconta créditos. Se ambos forem R$ 0, os Modelos A e B recolhem os mesmos tributos sobre a receita.</div>
   </section>
 
   <section>
@@ -517,8 +745,9 @@
         <tr>
           <th>Tributo</th>
           <th>Hoje (R$)</th>
-          <th>Modelo A — dentro do DAS</th>
-          <th>Modelo B — regime híbrido</th>
+          <th>Modelo A<br>dentro do DAS</th>
+          <th>Modelo B<br>híbrido sem crédito</th>
+          <th>Modelo B<br>híbrido com crédito</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -532,9 +761,12 @@
       <thead>
         <tr>
           <th>Tributo</th>
-          <th>Débito (fat. × alíquota)</th>
-          <th>Crédito aplicado</th>
-          <th>Líquido a recolher</th>
+          <th>Débito<br>(fat. × alíquota)</th>
+          <th>Crédito<br>do mês</th>
+          <th>Saldo<br>anterior</th>
+          <th>Crédito<br>aplicado</th>
+          <th>Líquido<br>a recolher</th>
+          <th>Saldo p/<br>próximo mês</th>
         </tr>
       </thead>
       <tbody id="creditoBody"></tbody>
@@ -555,37 +787,75 @@
       </div>
     </div>
 
-    <div class="disclaimer" id="sublimiteAlert" style="display:none; border-left-color:var(--red-debit); background:#F5E6E1; color:#5C2A20;"></div>
-
-    <div class="disclaimer">
+        <div class="disclaimer">
       No modelo "por dentro do DAS" (Modelo A), a lei não altera a forma de apuração: CBS e IBS substituem PIS/COFINS e ICMS/ISS pelos mesmos valores já embutidos na alíquota efetiva atual — por isso o total tende a ficar igual ao de hoje. As alíquotas-teste de 2026 (0,1% + 0,9%) <strong>não se aplicam</strong> ao Simples Nacional (art. 348, III, "c" da LC 214/2025). No Modelo B (regime regular/híbrido), as alíquotas usadas são as de referência do regime pleno, ainda não definitivas — dependem de cálculo final da Receita Federal, do TCU e de fixação pelo Senado. Trate os resultados como estimativa para planejamento, não como apuração oficial.
     </div>
   </section>
 
+<section>
+  <div class="section-title"><h2>4 · Simples normal × Híbrido</h2><span class="note">sem e com crédito de IBS/CBS</span></div>
+  <div class="scenario-cards three">
+    <div class="scenario-card">
+      <h3>Simples Nacional normal</h3>
+      <div class="desc">DAS de hoje, com PIS, COFINS e ICMS/ISS embutidos na guia.</div>
+      <div class="figure" id="sumSimples">R$ 0<small>/mês</small></div>
+    </div>
+    <div class="scenario-card">
+      <h3>Híbrido · sem crédito</h3>
+      <div class="desc">IBS e CBS por fora, pelo débito integral (faturamento × alíquota), sem abater créditos. IRPJ, CSLL e CPP ficam no DAS.</div>
+      <div class="figure" id="sumHibSem">R$ 0<small>/mês</small></div>
+      <div class="delta" id="deltaSem"></div>
+    </div>
+    <div class="scenario-card">
+      <h3>Híbrido · com crédito</h3>
+      <div class="desc" id="descCom"></div>
+      <div class="figure" id="sumHibCom">R$ 0<small>/mês</small></div>
+      <div class="delta" id="deltaCom"></div>
+    </div>
+  </div>
+  <div id="sumEco" style="margin-top:14px;font-size:12px;color:var(--ink-soft);"></div>
+</section>
+<div class="month-nav">
+  <button type="button" class="nav-btn" onclick="goTo(cur>0?cur-1:-1)">← Anterior</button>
+  <button type="button" class="nav-btn primary" onclick="goTo(Math.min(cur+1,11))">Próximo mês →</button>
+</div>
+</div>
+
   <div class="footnote">
-    Base legal: Lei Complementar nº 214/2025 (IBS, CBS e Imposto Seletivo), Lei Complementar nº 227/2026 (Comitê Gestor do IBS) e Resoluções CGSN nº 186/2026 e nº 190/2026 (regras do Simples Nacional na transição). As faixas, alíquotas nominais, parcelas a deduzir e o percentual de repartição dos tributos usados no cálculo seguem as tabelas oficiais dos Anexos I a V da LC 123/2006, publicadas pela Receita Federal (normas.receita.fazenda.gov.br), sem considerar o "fator R" do Anexo V nem os ajustes de redistribuição do ISS/ICMS acima de 5% na 5ª faixa dos Anexos III, IV e V. O tratamento da substituição tributária/retenção segue o art. 25, §1º, "b" da Resolução CGSN nº 94/2011 (atual art. 28, §4º da Resolução CGSN nº 140/2018): desconsidera-se apenas o percentual de ICMS/ISS daquela parcela de receita, sem redistribuir esse percentual para os demais tributos. Não estão implementados os regimes de monofasia (que passam a zerar CBS em vez de PIS/COFINS a partir de 2027) nem a segregação de receitas de exportação. IRPJ e CSLL não são alterados pela reforma do consumo.
+    Base legal: Lei Complementar nº 214/2025 (IBS, CBS e Imposto Seletivo), Lei Complementar nº 227/2026 (Comitê Gestor do IBS) e Resoluções CGSN nº 186/2026 e nº 190/2026 (regras do Simples Nacional na transição). As faixas, alíquotas nominais, parcelas a deduzir e o percentual de repartição dos tributos usados no cálculo seguem as tabelas oficiais dos Anexos I a V da LC 123/2006, publicadas pela Receita Federal (normas.receita.fazenda.gov.br), sem considerar o "fator R" do Anexo V nem os ajustes de redistribuição do ISS/ICMS acima de 5% na 5ª faixa dos Anexos III, IV e V. IRPJ e CSLL não são alterados pela reforma do consumo — ela trata apenas dos tributos que davam origem a ICMS, ISS, PIS, COFINS e IPI.
   </div>
 
+</div>
 </div>
 
 <script>
 const colors = {
-  pis:'#8C3B2E', cofins:'#B8892B', irpj:'#1B4332', csll:'#2F6B4F', cpp:'#4A5A4F', icms:'#6B5B95', ipi:'#C97B3D', iss:'#3D6B8C'
+  pis:'#8C3B2E', cofins:'#B8892B', irpj:'#1B4332', csll:'#2F6B4F', cpp:'#4A5A4F', icms:'#6B5B95', ipi:'#C97B3D'
 };
-const labels = {pis:'PIS', cofins:'COFINS', irpj:'IRPJ', csll:'CSLL', cpp:'CPP', icms:'ICMS', ipi:'IPI', iss:'ISS'};
+const labels = {pis:'PIS', cofins:'COFINS', irpj:'IRPJ', csll:'CSLL', cpp:'CPP', icms:'ICMS/ISS', ipi:'IPI'};
 
-const keys = ['pis','cofins','irpj','csll','cpp','icms','ipi','iss'];
+const keys = ['pis','cofins','irpj','csll','cpp','icms','ipi'];
 
 // Tabelas do Simples Nacional (LC 123/2006, Anexos I a V) — faixa: [tetoRBT12, aliquotaNominal, parcelaDeduzir]
 const tabelasSimples = {
   I:[ [180000,0.04,0], [360000,0.073,5940], [720000,0.095,13860], [1800000,0.107,22500], [3600000,0.143,87300], [4800000,0.19,378000] ],
+  'I_ST':[ [180000,0.04,0], [360000,0.073,5940], [720000,0.095,13860], [1800000,0.107,22500], [3600000,0.143,87300], [4800000,0.19,378000] ],
   II:[ [180000,0.045,0], [360000,0.078,5940], [720000,0.10,13860], [1800000,0.112,22500], [3600000,0.147,85500], [4800000,0.30,720000] ],
+  'II_ST':[ [180000,0.045,0], [360000,0.078,5940], [720000,0.10,13860], [1800000,0.112,22500], [3600000,0.147,85500], [4800000,0.30,720000] ],
   III:[ [180000,0.06,0], [360000,0.112,9360], [720000,0.135,17640], [1800000,0.16,35640], [3600000,0.21,125640], [4800000,0.33,648000] ],
   IV:[ [180000,0.045,0], [360000,0.09,8100], [720000,0.102,12420], [1800000,0.14,39780], [3600000,0.22,183780], [4800000,0.33,828000] ],
   V:[ [180000,0.155,0], [360000,0.18,4500], [720000,0.195,9900], [1800000,0.205,17100], [3600000,0.23,62100], [4800000,0.305,540000] ],
 };
 const nomesFaixa = ['1ª faixa','2ª faixa','3ª faixa','4ª faixa','5ª faixa','6ª faixa'];
-const nomesAnexo = {I:'Anexo I — Comércio', II:'Anexo II — Indústria', III:'Anexo III — Serviços', IV:'Anexo IV — Serviços (CPP à parte)', V:'Anexo V — Serviços intelectuais'};
+const nomesAnexo = {
+  I:'Anexo I — Comércio (Sem ST)',
+  'I_ST':'Anexo I — Comércio (Com ST de ICMS)',
+  II:'Anexo II — Indústria (Sem ST)',
+  'II_ST':'Anexo II — Indústria (Com ST de ICMS)',
+  III:'Anexo III — Serviços',
+  IV:'Anexo IV — Serviços (CPP à parte)',
+  V:'Anexo V — Serviços intelectuais'
+};
 
 // Tabela oficial de repartição dos tributos dentro do DAS (Receita Federal, Anexos I a V da LC 123/2006)
 // chaves: irpj, csll, cofins, pis, cpp, icms (ICMS ou ISS conforme o anexo), ipi (só Anexo II)
@@ -598,12 +868,28 @@ const repartTributos = {
     {irpj:5.50, csll:3.50, cofins:12.74, pis:2.76, cpp:42.00, icms:33.50, ipi:0},
     {irpj:13.50, csll:10.00, cofins:28.27, pis:6.13, cpp:42.10, icms:0, ipi:0},
   ],
+  'I_ST':[
+    {irpj:5.50, csll:3.50, cofins:12.74, pis:2.76, cpp:41.50, icms:0, ipi:0},
+    {irpj:5.50, csll:3.50, cofins:12.74, pis:2.76, cpp:41.50, icms:0, ipi:0},
+    {irpj:5.50, csll:3.50, cofins:12.74, pis:2.76, cpp:42.00, icms:0, ipi:0},
+    {irpj:5.50, csll:3.50, cofins:12.74, pis:2.76, cpp:42.00, icms:0, ipi:0},
+    {irpj:5.50, csll:3.50, cofins:12.74, pis:2.76, cpp:42.00, icms:0, ipi:0},
+    {irpj:13.50, csll:10.00, cofins:28.27, pis:6.13, cpp:42.10, icms:0, ipi:0},
+  ],
   II:[
     {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:32.00, ipi:7.50},
     {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:32.00, ipi:7.50},
     {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:32.00, ipi:7.50},
     {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:32.00, ipi:7.50},
     {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:32.00, ipi:7.50},
+    {irpj:8.50, csll:7.50, cofins:20.96, pis:4.54, cpp:23.50, icms:0, ipi:35.00},
+  ],
+  'II_ST':[
+    {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:0, ipi:7.50},
+    {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:0, ipi:7.50},
+    {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:0, ipi:7.50},
+    {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:0, ipi:7.50},
+    {irpj:5.50, csll:3.50, cofins:11.51, pis:2.49, cpp:37.50, icms:0, ipi:7.50},
     {irpj:8.50, csll:7.50, cofins:20.96, pis:4.54, cpp:23.50, icms:0, ipi:35.00},
   ],
   III:[
@@ -632,56 +918,76 @@ const repartTributos = {
   ],
 };
 
-// Tabela de redução de ICMS do Paraná para o Simples Nacional (Anexo XI do RICMS/PR, Tabela I — comércio)
-// faixa: [tetoRBT12, aliquotaNominalPR, parcelaDeduzirPR] — 0 = isenção total
-const tabelaICMS_PR = [
-  [180000, 0, 0],
-  [360000, 0, 0],
-  [720000, 0.031825, 11457.00],
-  [1800000, 0.035845, 14351.40],
-  [3600000, 0.047905, 36059.40],
-  [4800000, null, null], // acima do sublimite: ICMS já sai do DAS pela regra nacional
-];
-function calcReducaoICMS_PR(rbt12, aliqEfNacionalICMS){
-  if(rbt12 <= 360000) return 1; // isenção total
-  let idx = tabelaICMS_PR.length-1;
-  for(let i=0;i<tabelaICMS_PR.length;i++){ if(rbt12<=tabelaICMS_PR[i][0]){ idx=i; break; } }
-  const [teto, aliqPR, pdPR] = tabelaICMS_PR[idx];
-  if(aliqPR === null || aliqEfNacionalICMS <= 0) return 0;
-  const aliqEfPR = (rbt12*aliqPR - pdPR)/rbt12;
-  const reducao = 1 - (Math.max(aliqEfPR,0) / aliqEfNacionalICMS);
-  return Math.min(Math.max(reducao, 0), 1);
-}
-let anexoIdCounter = 0;
-let anexos = []; // {id, codigo, months:[12 valores]}
+// Cálculo automático da alíquota de ICMS do Paraná (Lei Estadual nº 15.562/2007)
+function calcAliqIcmsPR(rbt12, aliqEfetivaNac, pctIcmsRepart, redIcmsPctManual){
+  if(pctIcmsRepart <= 0 || aliqEfetivaNac <= 0 || rbt12 <= 0) return 0;
+  
+  // Se veio percentual de redução oficial da declaração importada:
+  if(typeof redIcmsPctManual === 'number' && redIcmsPctManual >= 0){
+    return aliqEfetivaNac * (pctIcmsRepart / 100) * (1 - redIcmsPctManual / 100);
+  }
 
-function novoAnexo(codigo, valorMes){
+  // Tabela e regras oficiais do Paraná (Lei 15.562/2007 e alterações)
+  if(rbt12 <= 360000){
+    // Até R$ 360.000: Isenção total de ICMS no PR (0%)
+    return 0;
+  } else if(rbt12 <= 480000){
+    // De R$ 360.000,01 a R$ 480.000: cálculo progressivo PR
+    return Math.max(((rbt12 * 0.0318328) - 11459.80) / rbt12, 0);
+  } else if(rbt12 <= 720000){
+    // De R$ 480.000,01 a R$ 720.000: alíquota efetiva de ICMS do PR
+    return 0.008042518397383484;
+  } else if(rbt12 <= 1800000){
+    // De R$ 720.000,01 a R$ 1.800.000: Tabela PR Faixa 4
+    return Math.max(((rbt12 * (0.112 * (pctIcmsRepart / 100))) - 18324.52) / rbt12, 0);
+  } else if(rbt12 <= 3600000){
+    // De R$ 1.800.000,01 a R$ 3.600.000: Tabela PR Faixa 5
+    return Math.max(((rbt12 * (0.143 * (pctIcmsRepart / 100))) - 36055.50) / rbt12, 0);
+  }
+  return aliqEfetivaNac * (pctIcmsRepart / 100) * (1 - 0.0469);
+}
+
+let anexoIdCounter = 0;
+let anexos = []; // {id, codigo, valorMes: number, redIcmsPct?: number, tributosOficiais?: object}
+
+function novoAnexo(codigo, valorMes, redIcmsPct, tributosOficiais){
   anexoIdCounter++;
   return {
     id: anexoIdCounter,
     codigo: codigo,
-    months: new Array(12).fill(valorMes),
-    stValue: 0,
-    reducaoPR: false,
-    reducaoPRManual: null
+    valorMes: valorMes || 0,
+    redIcmsPct: redIcmsPct !== undefined ? redIcmsPct : null,
+    tributosOficiais: tributosOficiais || null
   };
 }
 
 function buildAnexosUI(){
   const container = document.getElementById('anexosContainer');
   container.innerHTML = '';
-  const labelsMonth = ['12 meses atrás','11 meses atrás','10 meses atrás','9 meses atrás','8 meses atrás','7 meses atrás','6 meses atrás','5 meses atrás','4 meses atrás','3 meses atrás','2 meses atrás','Mês atual'];
 
   anexos.forEach((anx, idx)=>{
     const card = document.createElement('div');
     card.className = 'anexo-card';
+    card.style.padding = '14px 18px';
+    card.style.marginBottom = '12px';
 
     const header = document.createElement('div');
     header.className = 'anexo-card-header';
-    header.innerHTML = '<strong style="font-family:\'Source Serif 4\', serif; color:var(--forest-deep); white-space:nowrap;">Atividade '+(idx+1)+'</strong>'+
-      '<select data-id="'+anx.id+'" class="anexoSelect">'+
+    header.style.marginBottom = '0';
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.gap = '14px';
+    header.style.flexWrap = 'wrap';
+
+    header.innerHTML = '<strong style="font-family:\'Source Serif 4\', serif; color:var(--forest-deep); white-space:nowrap; min-width:85px;">Atividade '+(idx+1)+'</strong>'+
+      '<select data-id="'+anx.id+'" class="anexoSelect" style="flex:1; min-width:240px;">'+
         Object.keys(nomesAnexo).map(c=> '<option value="'+c+'"'+(c===anx.codigo?' selected':'')+'>'+nomesAnexo[c]+'</option>').join('')+
-      '</select>';
+      '</select>'+
+      '<div style="display:flex; align-items:center; gap:8px;">'+
+        '<label style="font-size:12px; font-weight:600; color:var(--ink); white-space:nowrap;">Faturamento no mês (R$):</label>'+
+        '<input type="text" value="'+formatMoneyInput(anx.valorMes)+'" data-id="'+anx.id+'" class="anexoValorInput money-input" style="font-family:\'IBM Plex Mono\', monospace; font-size:14px; font-weight:600; width:150px; text-align:right;">'+
+      '</div>';
+
     if(anexos.length > 1){
       const rm = document.createElement('button');
       rm.type = 'button';
@@ -695,70 +1001,7 @@ function buildAnexosUI(){
       header.appendChild(rm);
     }
     card.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.className = 'months-grid';
-    labelsMonth.forEach((lab, i)=>{
-      const div = document.createElement('div');
-      div.className = 'month-field' + (i===11 ? ' current' : '');
-      div.innerHTML = '<label>'+lab+'</label><input type="number" min="0" step="500" value="'+anx.months[i]+'" data-id="'+anx.id+'" data-idx="'+i+'">';
-      grid.appendChild(div);
-    });
-    card.appendChild(grid);
-
-    const stWrap = document.createElement('div');
-    stWrap.className = 'field';
-    stWrap.style.marginTop = '14px';
-    stWrap.style.marginBottom = '0';
-    const rotuloST = (anx.codigo==='IV') ? 'Faturamento do mês com ISS retido na fonte (R$)' : 'Faturamento do mês com substituição tributária de ICMS / monofásico (R$)';
-    stWrap.innerHTML = '<label>'+rotuloST+'</label>'+
-      '<input type="number" min="0" step="500" value="'+anx.stValue+'" data-id="'+anx.id+'" class="stInput">'+
-      '<div class="hint">Essa parcela da receita do mês atual já teve o ICMS/ISS recolhido antes na cadeia (ou retido na fonte) — por isso a fatia desse tributo é desconsiderada só para ela, mantendo os demais (IRPJ, CSLL, COFINS, PIS, CPP).</div>';
-    card.appendChild(stWrap);
-
-    if(anx.codigo === 'I'){
-      const prWrap = document.createElement('div');
-      prWrap.className = 'field';
-      prWrap.style.marginTop = '10px';
-      prWrap.style.marginBottom = '0';
-      prWrap.innerHTML = '<label style="display:flex; align-items:center; gap:8px; font-size:12.5px;">'+
-        '<input type="checkbox" data-id="'+anx.id+'" class="prCheckbox" '+(anx.reducaoPR?'checked':'')+' style="width:auto;">'+
-        'Aplicar redução automática de ICMS do Paraná (Anexo XI do RICMS/PR) na receita sem ST'+
-        '</label>'+
-        '<div class="hint">Confirmado batendo 100% com PGDAS-D real até dez/2025. A partir de 2026 a tabela pode ter sido atualizada e o cálculo automático pode divergir — se tiver o % exato do seu PGDAS-D do mês, prefira digitar abaixo.</div>'+
-        '<div style="margin-top:8px;">'+
-          '<label style="font-size:11.5px; color:var(--ink-soft);">% de redução exato do PGDAS-D (opcional, sobrepõe o cálculo automático)</label>'+
-          '<input type="number" min="0" max="100" step="0.01" placeholder="Ex: 64.40" value="'+(anx.reducaoPRManual!==null?anx.reducaoPRManual:'')+'" data-id="'+anx.id+'" class="prManualInput">'+
-        '</div>';
-      card.appendChild(prWrap);
-    }
-
     container.appendChild(card);
-  });
-
-  container.querySelectorAll('.stInput').forEach(inp=>{
-    inp.addEventListener('input', (e)=>{
-      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
-      anx.stValue = parseFloat(e.target.value) || 0;
-      update();
-    });
-  });
-
-  container.querySelectorAll('.prCheckbox').forEach(chk=>{
-    chk.addEventListener('change', (e)=>{
-      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
-      anx.reducaoPR = e.target.checked;
-      update();
-    });
-  });
-
-  container.querySelectorAll('.prManualInput').forEach(inp=>{
-    inp.addEventListener('input', (e)=>{
-      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
-      const v = e.target.value;
-      anx.reducaoPRManual = v === '' ? null : parseFloat(v);
-      update();
-    });
   });
 
   container.querySelectorAll('.anexoSelect').forEach(sel=>{
@@ -768,17 +1011,19 @@ function buildAnexosUI(){
       update();
     });
   });
-  container.querySelectorAll('.months-grid input').forEach(inp=>{
-    inp.addEventListener('input', (e)=>{
-      const anx = anexos.find(a=> a.id === parseInt(e.target.dataset.id));
-      anx.months[parseInt(e.target.dataset.idx)] = parseFloat(e.target.value) || 0;
-      update();
+  container.querySelectorAll('.anexoValorInput').forEach(inp=>{
+    setupMoneyMask(inp, (val)=>{
+      const anx = anexos.find(a=> a.id === parseInt(inp.dataset.id));
+      if(anx){
+        anx.valorMes = val;
+        update();
+      }
     });
   });
 }
 
 document.getElementById('addAnexoBtn').addEventListener('click', ()=>{
-  anexos.push(novoAnexo('III', 20000));
+  anexos.push(novoAnexo('III', 5000));
   buildAnexosUI();
   update();
 });
@@ -800,12 +1045,45 @@ function calcAliquotaEfetiva(rbt12, anexo){
   return {aliqEfetiva, faixaIdx};
 }
 
-function fmt(v){
-  return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
+function parseMoney(val){
+  if(typeof val === 'number') return val;
+  if(!val) return 0;
+  // Remove pontos de milhares e converte vírgula para ponto
+  const clean = val.toString().replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+  return parseFloat(clean) || 0;
 }
+
+function formatMoneyInput(val){
+  const num = typeof val === 'number' ? val : parseMoney(val);
+  return num.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function setupMoneyMask(input, onUpdate){
+  input.addEventListener('blur', (e)=>{
+    const val = parseMoney(e.target.value);
+    e.target.value = formatMoneyInput(val);
+    if(onUpdate) onUpdate(val);
+  });
+  input.addEventListener('input', (e)=>{
+    if(onUpdate) onUpdate(parseMoney(e.target.value));
+  });
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') {
+      e.target.blur();
+    }
+  });
+}
+function fmt(v){
+  return 'R$\u00a0' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
 function fmtPct(v, digits){
-  digits = digits===undefined?1:digits;
-  return v.toLocaleString('pt-BR', {minimumFractionDigits:digits, maximumFractionDigits:digits}) + '%';
+  digits = digits===undefined?2:digits;
+  return (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:digits, maximumFractionDigits:digits}) + '%';
+}
+
+function round2(v){
+  return Math.round((v + Number.EPSILON) * 100) / 100;
 }
 
 function renderSplit(atual, dasTotal){
@@ -832,8 +1110,10 @@ function renderSplit(atual, dasTotal){
 }
 
 function update(){
-  const rbt12 = anexos.reduce((sum, anx)=> sum + anx.months.reduce((a,b)=>a+b,0), 0);
-  const faturamentoMes = anexos.reduce((sum, anx)=> sum + anx.months[11], 0);
+  // RBT12 informado de forma direta e global para a empresa toda
+  const rbt12 = rbt12Of(Math.max(cur,0));
+  document.getElementById('globalRbt12Input').value = formatMoneyInput(rbt12);
+  const faturamentoMes = anexos.reduce((sum, anx)=> sum + (anx.valorMes || 0), 0);
 
   document.getElementById('rbt12Val').textContent = fmt(rbt12);
   document.getElementById('fatMesVal').textContent = fmt(faturamentoMes);
@@ -843,55 +1123,51 @@ function update(){
   const breakdownBody = document.getElementById('anexoBreakdownBody');
   breakdownBody.innerHTML = '';
   anexos.forEach((anx, idx)=>{
-    const fatMesAnx = anx.months[11];
-    const stValue = Math.min(anx.stValue || 0, fatMesAnx);
+    const fatMesAnx = anx.valorMes || 0;
     const {aliqEfetiva, faixaIdx} = calcAliquotaEfetiva(rbt12, anx.codigo);
     const repart = repartTributos[anx.codigo][faixaIdx];
-
-    // A fatia de ICMS/ISS só incide sobre a receita SEM substituição tributária/retenção;
-    // os demais tributos (IRPJ, CSLL, COFINS, PIS, CPP) continuam incidindo sobre o faturamento total,
-    // sem serem "inflados" para compensar o ICMS retirado — é isso que a regra do CGSN determina.
-    const fatSemST = fatMesAnx - stValue;
-    let icmsAnx = fatSemST * aliqEfetiva * (repart.icms/100);
-    let reducaoPRAplicada = 0;
-    if(anx.codigo === 'I' && anx.reducaoPRManual !== null && anx.reducaoPRManual !== undefined && !isNaN(anx.reducaoPRManual)){
-      reducaoPRAplicada = Math.min(Math.max(anx.reducaoPRManual/100, 0), 1);
-      icmsAnx = icmsAnx * (1 - reducaoPRAplicada);
-    } else if(anx.reducaoPR && anx.codigo === 'I'){
-      const aliqEfIcmsNacional = aliqEfetiva * (repart.icms/100);
-      reducaoPRAplicada = calcReducaoICMS_PR(rbt12, aliqEfIcmsNacional);
-      icmsAnx = icmsAnx * (1 - reducaoPRAplicada);
-    }
-    let outrosAnx = 0;
-    const ehServico = (anx.codigo === 'III' || anx.codigo === 'IV' || anx.codigo === 'V');
+    
+    // Calcula os tributos individuais com arredondamento tributo a tributo (padrão PGDAS-D)
+    let dasAnx = 0;
     keys.forEach(k=>{
-      if(k === 'icms'){
-        if(!ehServico) atual.icms += icmsAnx; // Anexo I/II: fatia é ICMS de verdade
-      } else if(k === 'iss'){
-        if(ehServico) atual.iss += icmsAnx; // Anexo III/IV/V: a mesma fatia é ISS, não ICMS
+      let valorTributo = 0;
+      if(anx.tributosOficiais && anx.tributosOficiais[k] !== undefined && Math.abs(fatMesAnx - (anx.valorMesOriginal || fatMesAnx)) < 0.01){
+        // Se temos os tributos oficiais exatos lidos do PDF da declaração para este faturamento
+        valorTributo = anx.tributosOficiais[k];
       } else {
-        const valorTributo = fatMesAnx * aliqEfetiva * (repart[k]/100);
-        atual[k] += valorTributo;
-        outrosAnx += valorTributo;
+        if(k === 'icms'){
+          if(anx.codigo === 'I_ST' || anx.codigo === 'II_ST'){
+            valorTributo = 0; // Com ST: ICMS zerado
+          } else if(anx.codigo === 'I' || anx.codigo === 'II'){
+            const aliqIcmsPR = calcAliqIcmsPR(rbt12, aliqEfetiva, repart.icms, anx.redIcmsPct);
+            valorTributo = round2(fatMesAnx * aliqIcmsPR);
+          } else {
+            valorTributo = round2(fatMesAnx * aliqEfetiva * (repart[k]/100));
+          }
+        } else {
+          valorTributo = round2(fatMesAnx * aliqEfetiva * (repart[k]/100));
+        }
       }
+      atual[k] = round2(atual[k] + valorTributo);
+      dasAnx = round2(dasAnx + valorTributo);
     });
-    const dasAnx = icmsAnx + outrosAnx;
-    dasTotal += dasAnx;
+
+    dasTotal = round2(dasTotal + dasAnx);
+    const aliqRealEfetiva = fatMesAnx > 0 ? (dasAnx / fatMesAnx) : aliqEfetiva;
 
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td>Atividade '+(idx+1)+' — '+nomesAnexo[anx.codigo]+
-      (stValue>0?' <span style="color:var(--ink-soft); font-size:11px;">(R$ '+stValue.toLocaleString('pt-BR',{maximumFractionDigits:0})+' c/ ST)</span>':'')+
-      (reducaoPRAplicada>0?' <span style="color:var(--forest); font-size:11px;">(redução ICMS-PR: '+fmtPct(reducaoPRAplicada*100,2)+')</span>':'')+
-      '</td>'+
+    tr.innerHTML = '<td>Atividade '+(idx+1)+' — '+nomesAnexo[anx.codigo]+'</td>'+
       '<td style="text-align:right;">'+nomesFaixa[faixaIdx]+'</td>'+
-      '<td style="text-align:right;">'+fmtPct(aliqEfetiva*100,2)+'</td>'+
+      '<td style="text-align:right;">'+fmtPct(aliqRealEfetiva*100,2)+'</td>'+
       '<td style="text-align:right;">'+fmt(fatMesAnx)+'</td>'+
       '<td style="text-align:right; font-weight:600;">'+fmt(dasAnx)+'</td>';
     breakdownBody.appendChild(tr);
   });
   const dasTotalRow = document.createElement('tr');
   dasTotalRow.className = 'total';
-  dasTotalRow.innerHTML = '<td>Total</td><td></td><td></td><td>'+fmt(faturamentoMes)+'</td><td>'+fmt(dasTotal)+'</td>';
+  const aliqTotal = faturamentoMes > 0 ? (dasTotal / faturamentoMes) * 100 : 0;
+  dasTotalRow.innerHTML = '<td>Total</td><td></td><td>'+fmtPct(aliqTotal,2)+'</td><td>'+fmt(faturamentoMes)+'</td><td>'+fmt(dasTotal)+'</td>';
+  document.getElementById('aliqTotalVal').textContent = fmtPct(aliqTotal,2);
   breakdownBody.appendChild(dasTotalRow);
   document.getElementById('dasTotalVal').textContent = fmt(dasTotal);
 
@@ -912,43 +1188,44 @@ function update(){
   document.getElementById('ibsVal').textContent = fmtPct(ibsRate*100, 2);
   document.getElementById('cbsVal').textContent = fmtPct(cbsRate*100, 2);
 
-  const creditoTotal = parseFloat(document.getElementById('creditoRS').value) || 0;
-  // reparte o crédito informado proporcionalmente entre IBS e CBS, na mesma proporção das alíquotas
-  const somaAliq = (ibsRate + cbsRate) || 1;
-  const creditoIbs = creditoTotal * (ibsRate/somaAliq);
-  const creditoCbs = creditoTotal * (cbsRate/somaAliq);
-  document.getElementById('creditoSplitHint').textContent =
-    creditoTotal > 0
-    ? 'Repartição proporcional às alíquotas: R$ '+creditoCbs.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de crédito de CBS + R$ '+creditoIbs.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de crédito de IBS.'
-    : '';
+  const entradas = parseMoney(el('entradasRS').value);
+  const creditoCbs = el('credCbsChk').checked ? round2(entradas * cbsRate) : 0;
+  const creditoIbs = el('credIbsChk').checked ? round2(entradas * ibsRate) : 0;
+  el('creditoCbsRS').value = formatMoneyInput(creditoCbs);
+  el('creditoIbsRS').value = formatMoneyInput(creditoIbs);
+  const creditoTotal = round2(creditoCbs + creditoIbs);
 
-  // Modelo A: dentro do DAS -> por lei, a apuração NÃO muda; PIS+COFINS+IPI viram CBS e ICMS+ISS viram IBS
+  // Modelo A: dentro do DAS -> por lei, a apuração NÃO muda; PIS+COFINS+IPI viram CBS e ICMS/ISS vira IBS
   // pelos MESMOS valores já embutidos na alíquota efetiva atual (sem aplicar a alíquota de referência)
-  const cbsA = atual.pis + atual.cofins + atual.ipi;
-  const ibsA = atual.icms + atual.iss;
-  const totalA = atual.irpj + atual.csll + atual.cpp + cbsA + ibsA;
+  const cbsA = round2(atual.pis + atual.cofins + atual.ipi);
+  const ibsA = round2(atual.icms);
+  const totalA = round2(atual.irpj + atual.csll + atual.cpp + cbsA + ibsA);
 
   // Modelo B: híbrido -> débito (fat * aliq) - crédito informado em R$; IRPJ/CSLL/CPP continuam como hoje (no DAS)
-  const debitoIbs = faturamento * ibsRate;
-  const debitoCbs = faturamento * cbsRate;
-  const ibsB = Math.max(debitoIbs - creditoIbs, 0);
-  const cbsB = Math.max(debitoCbs - creditoCbs, 0);
-  const ibsCbsB = ibsB + cbsB;
-  const totalB = atual.irpj + atual.csll + atual.cpp + ibsCbsB;
+  const debitoIbs = round2(faturamento * ibsRate);
+  const debitoCbs = round2(faturamento * cbsRate);
+  const sdo = saldoAnt(Math.max(cur,0));
+  const dispIbs = round2(creditoIbs + sdo.ibs), dispCbs = round2(creditoCbs + sdo.cbs);
+  const ibsB = Math.max(round2(debitoIbs - dispIbs), 0);
+  const cbsB = Math.max(round2(debitoCbs - dispCbs), 0);
+  const usadoIbs = round2(Math.min(dispIbs, debitoIbs)), usadoCbs = round2(Math.min(dispCbs, debitoCbs));
+  const saldoIbs = round2(dispIbs - usadoIbs), saldoCbs = round2(dispCbs - usadoCbs);
+  const ibsCbsB = round2(ibsB + cbsB);
+  const totalB = round2(atual.irpj + atual.csll + atual.cpp + ibsCbsB);
 
+  const totalSem = round2(atual.irpj + atual.csll + atual.cpp + debitoIbs + debitoCbs);
   // table
   const rows = [
     {label:'PIS', atual: atual.pis, a:null, b:null, out:true},
     {label:'COFINS', atual: atual.cofins, a:null, b:null, out:true},
     {label:'IPI', atual: atual.ipi, a:null, b:null, out: atual.ipi>0},
-    {label:'ICMS', atual: atual.icms, a:null, b:null, out: atual.icms>0},
-    {label:'ISS', atual: atual.iss, a:null, b:null, out: atual.iss>0},
-    {label:'CPP', atual: atual.cpp, a: atual.cpp, b: atual.cpp},
-    {label:'IRPJ', atual: atual.irpj, a: atual.irpj, b: atual.irpj},
-    {label:'CSLL', atual: atual.csll, a: atual.csll, b: atual.csll},
-    {label:'CBS', atual: null, a: cbsA, b: cbsB, inNew:true},
-    {label:'IBS', atual: null, a: ibsA, b: ibsB, inNew:true},
-  ].filter(r => !((r.label==='IPI'&&atual.ipi===0) || (r.label==='ICMS'&&atual.icms===0) || (r.label==='ISS'&&atual.iss===0)));
+    {label:'ICMS/ISS', atual: atual.icms, a:null, b:null, out:true},
+    {label:'CPP', atual: atual.cpp, a: atual.cpp, s: atual.cpp, b: atual.cpp},
+    {label:'IRPJ', atual: atual.irpj, a: atual.irpj, s: atual.irpj, b: atual.irpj},
+    {label:'CSLL', atual: atual.csll, a: atual.csll, s: atual.csll, b: atual.csll},
+    {label:'CBS', atual: null, a: cbsA, s: debitoCbs, b: cbsB, inNew:true},
+    {label:'IBS', atual: null, a: ibsA, s: debitoIbs, b: ibsB, inNew:true},
+  ].filter(r => !(r.label==='IPI' && atual.ipi===0));
 
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
@@ -959,12 +1236,13 @@ function update(){
     tr.innerHTML = '<td>'+r.label+'</td>'+
       '<td>'+(r.atual!==null? fmt(r.atual): '—')+'</td>'+
       '<td>'+(r.a!==null? fmt(r.a): '—')+'</td>'+
+      '<td>'+(r.s!=null? fmt(r.s): '—')+'</td>'+
       '<td>'+(r.b!==null? fmt(r.b): '—')+'</td>';
     tbody.appendChild(tr);
   });
   const totalRow = document.createElement('tr');
   totalRow.className = 'total';
-  totalRow.innerHTML = '<td>Total</td><td>'+fmt(dasTotal)+'</td><td>'+fmt(totalA)+'</td><td>'+fmt(totalB)+'</td>';
+  totalRow.innerHTML = '<td>Total</td><td>'+fmt(dasTotal)+'</td><td>'+fmt(totalA)+'</td><td>'+fmt(totalSem)+'</td><td>'+fmt(totalB)+'</td>';
   tbody.appendChild(totalRow);
 
   document.getElementById('totalA').innerHTML = fmt(totalA)+'<small>/mês</small>';
@@ -974,32 +1252,44 @@ function update(){
   const credBody = document.getElementById('creditoBody');
   credBody.innerHTML = '';
   const credRows = [
-    {label:'CBS', debito: debitoCbs, credito: creditoCbs, liquido: cbsB},
-    {label:'IBS', debito: debitoIbs, credito: creditoIbs, liquido: ibsB},
+    {label:'CBS', debito: debitoCbs, credMes: creditoCbs, ant: sdo.cbs, usado: usadoCbs, liquido: cbsB, saldo: saldoCbs},
+    {label:'IBS', debito: debitoIbs, credMes: creditoIbs, ant: sdo.ibs, usado: usadoIbs, liquido: ibsB, saldo: saldoIbs},
   ];
   credRows.forEach(r=>{
     const tr = document.createElement('tr');
     tr.innerHTML = '<td>'+r.label+'</td>'+
       '<td>'+fmt(r.debito)+'</td>'+
-      '<td style="color:var(--green-credit);">− '+fmt(r.credito)+'</td>'+
-      '<td style="font-weight:600;">'+fmt(r.liquido)+'</td>';
+      '<td>'+fmt(r.credMes)+'</td><td>'+fmt(r.ant)+'</td>'+
+      '<td style="color:var(--green-credit);">− '+fmt(r.usado)+'</td>'+
+      '<td style="font-weight:600;">'+fmt(r.liquido)+'</td><td>'+fmt(r.saldo)+'</td>';
     credBody.appendChild(tr);
   });
   const credTotalRow = document.createElement('tr');
   credTotalRow.className = 'total';
-  credTotalRow.innerHTML = '<td>Total IBS+CBS</td>'+
+  credTotalRow.innerHTML = '<td>Total\u00a0IBS+CBS</td>'+
     '<td>'+fmt(debitoIbs+debitoCbs)+'</td>'+
-    '<td>− '+fmt(creditoIbs+creditoCbs)+'</td>'+
-    '<td>'+fmt(ibsCbsB)+'</td>';
+    '<td>'+fmt(creditoIbs+creditoCbs)+'</td><td>'+fmt(sdo.ibs+sdo.cbs)+'</td>'+
+    '<td>− '+fmt(usadoIbs+usadoCbs)+'</td>'+
+    '<td>'+fmt(ibsCbsB)+'</td><td>'+fmt(saldoIbs+saldoCbs)+'</td>';
   credBody.appendChild(credTotalRow);
-  if(creditoTotal > (debitoIbs+debitoCbs)){
+  if(saldoCbs + saldoIbs > 0){
     const warnRow = document.createElement('tr');
-    warnRow.innerHTML = '<td colspan="4" style="color:var(--gold); font-size:11.5px; text-align:left; border-bottom:none;">O crédito informado (R$ '+creditoTotal.toLocaleString('pt-BR')+') é maior que o débito do mês — o excedente normalmente vira saldo credor para compensar em meses seguintes, não recolhimento negativo.</td>';
+    warnRow.innerHTML = '<td colspan="7" style="color:var(--gold); font-size:11.5px; text-align:left; border-bottom:none; white-space:normal; line-height:1.5;">O crédito disponível superou o débito do mês. O excedente (CBS '+fmt(saldoCbs)+' e IBS '+fmt(saldoIbs)+') fica como saldo credor e é abatido automaticamente nos meses seguintes.</td>';
     credBody.appendChild(warnRow);
   }
 
   setDelta('deltaA', totalA, dasTotal);
   setDelta('deltaB', totalB, dasTotal);
+
+  // Resumo: Simples normal x Híbrido sem crédito x Híbrido com crédito
+  el('sumSimples').innerHTML = fmt(dasTotal)+'<small>/mês</small>';
+  el('sumHibSem').innerHTML = fmt(totalSem)+'<small>/mês</small>';
+  el('sumHibCom').innerHTML = fmt(totalB)+'<small>/mês</small>';
+  setDelta('deltaSem', totalSem, dasTotal);
+  setDelta('deltaCom', totalB, dasTotal);
+  el('descCom').textContent = 'Abate os créditos: entradas de '+fmt(entradas)+' geram CBS '+fmt(creditoCbs)+' e IBS '+fmt(creditoIbs)+(sdo.cbs+sdo.ibs>0 ? '; saldo de meses anteriores: CBS '+fmt(sdo.cbs)+' e IBS '+fmt(sdo.ibs) : '')+'.';
+  el('sumEco').textContent = 'O crédito reduz o valor a recolher em '+fmt(round2(totalSem - totalB))+' em relação ao híbrido sem crédito.'+(saldoCbs+saldoIbs>0 ? ' Saldo credor que passa para o próximo mês: CBS '+fmt(saldoCbs)+' e IBS '+fmt(saldoIbs)+'.' : '');
+  renderSidebar();
 }
 
 function setDelta(id, novo, antigo){
@@ -1024,9 +1314,441 @@ document.querySelectorAll('.toggle-btn').forEach(btn=>{
   });
 });
 
-anexos.push(novoAnexo('III', 50000));
+// Inicialização padrão com o cenário de exemplo (Central Auto Center - PR)
+// RBT12: R$ 483.875,00 | Faturamento total no mês: R$ 48.525,00
+// ===== Meses, histórico e JSON =====
+const el = id => document.getElementById(id);
+const MN = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+let historico = [40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.88];
+let cur = 0; // -1 = aba Histórico; 0..11 = meses
+const meses = Array.from({length:12}, ()=>({anexos:[], creditoCbs:0, creditoIbs:0, entradas:0, credCbs:true, credIbs:true}));
+
+function mesLabel(k){
+  const [y,m] = (el('mesInicial').value || '2027-01').split('-').map(Number);
+  const d = y*12 + (m-1) + k;
+  return MN[((d%12)+12)%12] + '/' + Math.floor(d/12);
+}
+function fatOf(j){ return (j===cur ? anexos : meses[j].anexos).reduce((s,a)=> s + (a.valorMes||0), 0); }
+function rbt12Of(i){
+  let s = 0;
+  for(let t=i; t<i+12; t++) s += t<12 ? historico[t] : fatOf(t-12);
+  return round2(s);
+}
+function saveCur(){
+  if(cur < 0) return;
+  meses[cur].anexos = anexos;
+  meses[cur].creditoCbs = parseMoney(el('creditoCbsRS').value);
+  meses[cur].creditoIbs = parseMoney(el('creditoIbsRS').value);
+  meses[cur].entradas = parseMoney(el('entradasRS').value);
+  meses[cur].credCbs = el('credCbsChk').checked;
+  meses[cur].credIbs = el('credIbsChk').checked;
+}
+function goTo(k){
+  saveCur(); cur = k;
+  const h = k < 0;
+  el('histView').style.display = h ? '' : 'none';
+  el('mesView').style.display = h ? 'none' : '';
+  if(h){ renderHist(); }
+  else {
+    const m = meses[k];
+    anexos = m.anexos;
+    el('creditoCbsRS').value = formatMoneyInput(m.creditoCbs);
+    el('creditoIbsRS').value = formatMoneyInput(m.creditoIbs);
+    el('entradasRS').value = formatMoneyInput(m.entradas);
+    el('credCbsChk').checked = m.credCbs;
+    el('credIbsChk').checked = m.credIbs;
+    el('mesTitulo').textContent = 'Apuração de ' + mesLabel(k) + ' · mês ' + (k+1) + ' de 12';
+    buildAnexosUI();
+    update();
+  }
+  renderSidebar();
+  window.scrollTo(0,0);
+}
+function renderSidebar(){
+  const L = el('tabList'); L.innerHTML = '';
+  const add = (k, t, sub)=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab' + (k===cur ? ' active' : '');
+    b.innerHTML = t + '<small>' + sub + '</small>';
+    b.onclick = ()=> goTo(k);
+    L.appendChild(b);
+  };
+  add(-1, 'Histórico', '12 meses anteriores<br>' + fmt(historico.reduce((a,b)=>a+b,0)));
+  for(let i=0;i<12;i++) add(i, (i+1)+'. '+mesLabel(i), 'Fat. '+fmt(fatOf(i))+'<br>RBT12 '+fmt(rbt12Of(i)));
+}
+function renderHist(){
+  const g = el('histGrid'); g.innerHTML = '';
+  historico.forEach((v,i)=>{
+    const d = document.createElement('div'); d.className = 'month-field';
+    d.innerHTML = '<label>'+mesLabel(i-12)+'</label><input type="text" value="'+formatMoneyInput(v)+'">';
+    setupMoneyMask(d.querySelector('input'), val=>{ historico[i] = val; histTotal(); renderSidebar(); });
+    g.appendChild(d);
+  });
+  histTotal();
+}
+function histTotal(){ el('histSum').textContent = fmt(historico.reduce((a,b)=>a+b,0)); }
+function fillHist(t){
+  const p = Math.floor(t/12*100)/100;
+  for(let i=0;i<12;i++) historico[i] = p;
+  historico[11] = round2(t - p*11);
+}
+el('mesInicial').addEventListener('change', ()=> goTo(cur));
+
+function jsonStatus(msg, ok){
+  const s = el('jsonStatus'); s.textContent = msg; s.style.color = ok ? '#85E3B3' : '#FFAAA6';
+  setTimeout(()=>{ s.textContent = ''; }, 5000);
+}
+function serializar(){
+  saveCur();
+  const act = document.querySelector('.toggle-btn.active');
+  return {
+    versao: 1, salvoEm: new Date().toISOString(),
+    mesInicial: el('mesInicial').value, historico: historico.slice(),
+    aliquotas: {ibs: parseFloat(el('ibsRate').value), cbs: parseFloat(el('cbsRate').value), preset: act ? act.dataset.preset : null},
+    meses: meses.map((m,i)=>({
+      mes: mesLabel(i), faturamento: round2(fatOf(i)), rbt12: rbt12Of(i),
+      entradas: m.entradas, geraCreditoCbs: m.credCbs, geraCreditoIbs: m.credIbs, creditoCbs: m.creditoCbs, creditoIbs: m.creditoIbs,
+      anexos: m.anexos.map(a=>({codigo:a.codigo, valorMes:a.valorMes, redIcmsPct:a.redIcmsPct, tributosOficiais:a.tributosOficiais, valorMesOriginal:a.valorMesOriginal||null}))
+    }))
+  };
+}
+el('saveJson').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(serializar(), null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'comparador-ibs-cbs-' + (el('mesInicial').value || 'dados') + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
+  jsonStatus('✓ JSON salvo', true);
+});
+el('loadJson').addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; e.target.value = '';
+  if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if(!Array.isArray(d.historico) || d.historico.length !== 12 || !Array.isArray(d.meses) || d.meses.length !== 12) throw new Error('estrutura inválida');
+    const novos = d.meses.map(m=>{
+      const lista = (m.anexos || []).map(a=>{
+        if(!tabelasSimples[a.codigo]) throw new Error('anexo desconhecido: ' + a.codigo);
+        const n = novoAnexo(a.codigo, Number(a.valorMes)||0, a.redIcmsPct, a.tributosOficiais);
+        if(a.valorMesOriginal) n.valorMesOriginal = a.valorMesOriginal;
+        return n;
+      });
+      if(!lista.length) lista.push(novoAnexo('I', 0));
+      const ent = m.entradas !== undefined ? Number(m.entradas)||0 : (d.aliquotas && d.aliquotas.ibs ? round2((Number(m.creditoIbs)||0)/(d.aliquotas.ibs/100)) : 0);
+      return {anexos: lista, creditoCbs: Number(m.creditoCbs)||0, creditoIbs: Number(m.creditoIbs)||0, entradas: ent, credCbs: m.geraCreditoCbs !== false, credIbs: m.geraCreditoIbs !== false};
+    });
+    historico = d.historico.map(v=> Number(v)||0);
+    novos.forEach((m,i)=>{ meses[i] = m; });
+    el('mesInicial').value = d.mesInicial || '2027-01';
+    if(d.aliquotas){
+      if(isFinite(d.aliquotas.ibs)) el('ibsRate').value = d.aliquotas.ibs;
+      if(isFinite(d.aliquotas.cbs)) el('cbsRate').value = d.aliquotas.cbs;
+      document.querySelectorAll('.toggle-btn').forEach(b=> b.classList.toggle('active', b.dataset.preset === d.aliquotas.preset));
+    }
+    cur = -2; // evita que saveCur() sobrescreva os dados carregados
+    goTo(0);
+    jsonStatus('✓ JSON carregado', true);
+  } catch(err){
+    jsonStatus('Erro ao carregar: ' + err.message, false);
+  }
+});
+function entradasDe(j){
+  return j===cur ? {e:parseMoney(el('entradasRS').value), c:el('credCbsChk').checked, i:el('credIbsChk').checked}
+                 : {e:meses[j].entradas, c:meses[j].credCbs, i:meses[j].credIbs};
+}
+// Saldo credor de CBS e IBS que chega ao mês i, vindo dos meses anteriores (só passa o que realmente sobrou)
+function saldoAnt(i){
+  const ir = parseFloat(el('ibsRate').value)/100, cr = parseFloat(el('cbsRate').value)/100;
+  let sc = 0, si = 0;
+  for(let j=0;j<i;j++){
+    const x = entradasDe(j), fat = fatOf(j);
+    sc = round2(Math.max(sc + (x.c ? round2(x.e*cr) : 0) - round2(fat*cr), 0));
+    si = round2(Math.max(si + (x.i ? round2(x.e*ir) : 0) - round2(fat*ir), 0));
+  }
+  return {cbs:sc, ibs:si};
+}
+
+function gerarPdf(todos){
+  document.querySelectorAll('#printRoot').forEach(n=> n.remove());
+  const orig = cur, rm = x=>{ if(x) x.remove(); };
+  const lista = todos ? [...Array(12).keys()] : [Math.max(orig,0)];
+  const root = document.createElement('div'); root.id = 'printRoot';
+  const linhas = [], pags = [];
+  lista.forEach(i=>{
+    goTo(i);
+    linhas.push({lbl:mesLabel(i), fat:parseMoney(el('fatMesVal').textContent), rbt:parseMoney(el('rbt12Val').textContent),
+      das:parseMoney(el('dasTotalVal').textContent), a:parseMoney(el('sumHibSem').textContent), b:parseMoney(el('totalB').textContent)});
+    const c = el('mesView').cloneNode(true);
+    rm(c.querySelector('#pgdasPdfInput').parentElement.parentElement);
+    rm(c.querySelector('#globalRbt12Input').closest('.field').parentElement);
+    rm(c.querySelector('#ibsRate').closest('section'));
+    rm(c.querySelector('.field[style*="margin-bottom:12px"]'));
+    ['#anexosContainer','#addAnexoBtn','.month-nav'].forEach(q=> rm(c.querySelector(q)));
+    c.querySelectorAll('.hint').forEach(h=> h.remove());
+    c.querySelectorAll('[id]').forEach(n=> n.removeAttribute('id'));
+    c.removeAttribute('id'); c.className = 'p-month'; c.style.display = '';
+    pags.push(c);
+  });
+  if(todos){
+    const T = k=> linhas.reduce((t,r)=> t + r[k], 0);
+    const cel = (v,b)=> '<td'+(b?' style="font-weight:600;"':'')+'>'+fmt(v)+'</td>';
+    const dif = (b,h)=> '<td style="font-weight:600;color:'+(b-h>0?'var(--red-debit)':'var(--green-credit)')+';">'+(b-h>0?'+':'')+fmt(b-h)+'</td>';
+    const rows = linhas.map(r=> '<tr><td>'+r.lbl+'</td>'+cel(r.fat)+cel(r.rbt)+cel(r.das)+cel(r.a)+cel(r.b)+dif(r.b,r.das)+'</tr>').join('');
+    const cover = document.createElement('div'); cover.className = 'p-cover';
+    cover.innerHTML = '<section><div class="section-title"><h2>Relatório anual · Simples Nacional × IBS/CBS</h2></div>'+
+      '<p style="margin:0 0 16px;color:var(--ink-soft);font-size:12px;">Período: '+mesLabel(0)+' a '+mesLabel(11)+' · Modelo B com IBS '+el('ibsVal').textContent+' e CBS '+el('cbsVal').textContent+' · Gerado em '+new Date().toLocaleDateString('pt-BR')+'</p>'+
+      '<table><thead><tr><th>Mês</th><th>Faturamento</th><th>RBT12</th><th>Simples<br>normal</th><th>Híbrido<br>s/ crédito</th><th>Híbrido<br>c/ crédito</th><th>c/ crédito<br>× Simples</th></tr></thead><tbody>'+rows+
+      '<tr class="total"><td>Total</td>'+cel(T('fat'))+'<td></td>'+cel(T('das'))+cel(T('a'))+cel(T('b'))+dif(T('b'),T('das'))+'</tr></tbody></table>'+
+      '<div class="disclaimer">Estimativa para planejamento, não é apuração oficial. As alíquotas do Modelo B são de referência e ainda não definitivas. Cada mês é detalhado nas páginas seguintes.</div></section>';
+    root.appendChild(cover);
+  }
+  pags.forEach(c=> root.appendChild(c));
+  document.body.appendChild(root);
+  goTo(orig);
+  const limpar = ()=>{ root.remove(); window.removeEventListener('afterprint', limpar); };
+  window.addEventListener('afterprint', limpar);
+  setTimeout(()=> window.print(), 200);
+}
+el('pdfMes').addEventListener('click', ()=> gerarPdf(false));
+el('pdfAno').addEventListener('click', ()=> gerarPdf(true));
+
+['credCbsChk','credIbsChk'].forEach(id=> el(id).addEventListener('change', update));
+
+function initMeses(){
+  meses[0].anexos = anexos; el('entradasRS').value = formatMoneyInput(30188.67);
+  for(let i=1;i<12;i++) meses[i].anexos = anexos.map(a=> novoAnexo(a.codigo, 0));
+  goTo(0);
+}
+
+const a1 = novoAnexo('I', 12230);
+const a2 = novoAnexo('I_ST', 30690);
+const a3 = novoAnexo('III', 5605);
+
+anexos.push(a1, a2, a3);
 buildAnexosUI();
-update();
+
+// Configura máscara nos inputs fixos de dinheiro
+['entradasRS'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el){
+    setupMoneyMask(el, ()=> update());
+  }
+});
+
+initMeses();
+
+// Função universal de extração de texto de PDF (com fallback duplo: PDF.js + fflate nativo)
+async function extractTextFromPdfData(arrayBuffer){
+  let fullText = '';
+  
+  // Tentativa 1: Via PDF.js se carregado
+  if(window.pdfjsLib){
+    try {
+      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+      for(let i=1; i<=pdf.numPages; i++){
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += '\n' + pageText;
+      }
+      if(fullText.trim().length > 100){
+        return fullText;
+      }
+    } catch(err){
+      console.warn('PDF.js falhou, acionando descompactador nativo:', err);
+    }
+  }
+
+  // Tentativa 2: Extração direta via fflate / stream-decompression
+  if(window.fflate && window.fflate.unzlibSync){
+    try {
+      const u8 = new Uint8Array(arrayBuffer);
+      const STREAM = new Uint8Array([115, 116, 114, 101, 97, 109]); // stream
+      const ENDSTREAM = new Uint8Array([101, 110, 100, 115, 116, 114, 101, 97, 109]); // endstream
+
+      function findSub(src, sub, fromIdx){
+        const subLen = sub.length;
+        const limit = src.length - subLen;
+        for(let i = fromIdx || 0; i <= limit; i++){
+          let m = true;
+          for(let j = 0; j < subLen; j++){
+            if(src[i + j] !== sub[j]){ m = false; break; }
+          }
+          if(m) return i;
+        }
+        return -1;
+      }
+
+      let pos = 0;
+      fullText = '';
+      while(true){
+        const start = findSub(u8, STREAM, pos);
+        if(start === -1) break;
+        let sStart = start + 6;
+        if(u8[sStart] === 13 && u8[sStart+1] === 10) sStart += 2;
+        else if(u8[sStart] === 10 || u8[sStart] === 13) sStart += 1;
+
+        const end = findSub(u8, ENDSTREAM, sStart);
+        if(end === -1) break;
+
+        const slice = u8.subarray(sStart, end);
+        try {
+          const dec = fflate.unzlibSync(slice);
+          const text = new TextDecoder('latin1').decode(dec);
+          const tjMatches = text.match(/\(([^)]+)\)\s*Tj/g) || [];
+          if(tjMatches.length > 0){
+            fullText += '\n' + tjMatches.map(m => m.replace(/^\(|\)\s*Tj$/g, '')).join(' ');
+          }
+        } catch(e){}
+        pos = end + 9;
+      }
+      if(fullText.trim().length > 50){
+        return fullText;
+      }
+    } catch(err){
+      console.error('Erro na extração fflate:', err);
+    }
+  }
+
+  return fullText;
+}
+
+// Leitor e extrator automático de PDF do PGDAS-D
+document.getElementById('pgdasPdfInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('pdfStatus');
+  statusEl.textContent = 'Processando PDF...';
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const fullText = await extractTextFromPdfData(arrayBuffer);
+
+    if(!fullText || fullText.trim().length < 50){
+      throw new Error('Não foi possível extrair o texto do arquivo.');
+    }
+
+    // 1. Extração do RBT12
+    let extractedRbt12 = 0;
+    const cleanText = fullText.replace(/\s+/g, ' ');
+    const rbt12Match = cleanText.match(/RBT12\)\s*([\d\.,]+)/i) || cleanText.match(/Receita bruta acumulada nos doze meses anteriores\s*([\d\.,]+)/i);
+    if(rbt12Match){
+      const valStr = rbt12Match[1].replace(/\./g, '').replace(',', '.');
+      extractedRbt12 = parseFloat(valStr) || 0;
+    }
+
+    // Extrai o faturamento total da declaração (Discriminativo de Receitas / Total)
+    let fatTotalDeclaracao = 0;
+    const fatTotalM = cleanText.match(/Discriminativo de Receitas[^\d]*Mercado Interno[^\d]*Mercado Externo[^\d]*Total\s*([\d\.,]+)/i) ||
+                      cleanText.match(/Total\s+([\d\.,]+)\s+0,00\s+([\d\.,]+)\s+Receita bruta acumulada/i);
+    if(fatTotalM){
+      fatTotalDeclaracao = parseFloat((fatTotalM[2] || fatTotalM[1]).replace(/\./g, '').replace(',', '.')) || 0;
+    }
+
+    // 2. Extração das Atividades
+    // Padrão PGDAS-D: blocos de atividade iniciados pela descrição da atividade
+    const novasAtividades = [];
+    const ativRegex = /(?:Revenda de mercadorias|Venda de mercadorias|Prestação de Serviços|Locação de bens|Serviços de comunicação|Transporte municipal|Transporte intermunicipal)[\s\S]*?(?=(?:Revenda de mercadorias|Venda de mercadorias|Prestação de Serviços|Locação de bens|Serviços de comunicação|Transporte municipal|Transporte intermunicipal|Totais do Estabelecimento|$))/g;
+    const blocos = fullText.match(ativRegex) || [];
+
+    blocos.forEach(bloco => {
+      // Identificar anexo/tipo
+      let cod = 'I';
+      const isST = /Com substituição tributária/i.test(bloco) || (/substituído tributário/i.test(bloco) && !/Sem substituição/i.test(bloco));
+      const isServico = /Prestação de Serviços|Locação de bens/i.test(bloco);
+      const isIndustria = /industrializadas|Indústria|Anexo II/i.test(bloco);
+
+      if(isServico){
+        if(/Anexo IV/i.test(bloco)) cod = 'IV';
+        else if(/Anexo V/i.test(bloco)) cod = 'V';
+        else cod = 'III';
+      } else if(isIndustria){
+        cod = isST ? 'II_ST' : 'II';
+      } else {
+        cod = isST ? 'I_ST' : 'I';
+      }
+
+      // Extrai a receita informada no bloco
+      const recMatch = bloco.match(/Receita Bruta Informada:\s*R\$\s*([\d\.,]+)/i) || 
+                       bloco.match(/Parcela 1:\s*R\$\s*([\d\.,]+)/i) ||
+                       bloco.match(/Valor Informado:\s*([\d\.,]+)/i);
+      let valor = 0;
+      if(recMatch){
+        valor = parseFloat(recMatch[1].replace(/\./g, '').replace(',', '.')) || 0;
+      }
+
+      // Extrai percentual de redução de ICMS caso conste no PDF (ex: Redução de ICMS: R$ 39.856,81 - 4,88%)
+      const redM = bloco.match(/Redu[^\d]*ICMS[^\d]*([\d\.,]+)%/i);
+      let redIcmsPct = null;
+      if(redM){
+        redIcmsPct = parseFloat(redM[1].replace(/\./g, '').replace(',', '.')) || null;
+      }
+
+      // Extrai a linha oficial de tributos do bloco para máxima fidelidade
+      let tributosOficiais = null;
+      const tribM = bloco.match(/IRPJ\s+CSLL\s+COFINS\s+PIS\/Pasep\s+INSS\/CPP\s+ICMS\s+IPI\s+ISS\s+Total\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)/i);
+      if(tribM){
+        tributosOficiais = {
+          irpj: parseFloat(tribM[1].replace(/\./g, '').replace(',', '.')) || 0,
+          csll: parseFloat(tribM[2].replace(/\./g, '').replace(',', '.')) || 0,
+          cofins: parseFloat(tribM[3].replace(/\./g, '').replace(',', '.')) || 0,
+          pis: parseFloat(tribM[4].replace(/\./g, '').replace(',', '.')) || 0,
+          cpp: parseFloat(tribM[5].replace(/\./g, '').replace(',', '.')) || 0,
+          icms: parseFloat(tribM[6].replace(/\./g, '').replace(',', '.')) || 0,
+          ipi: parseFloat(tribM[7].replace(/\./g, '').replace(',', '.')) || 0,
+          iss: parseFloat(tribM[8].replace(/\./g, '').replace(',', '.')) || 0,
+          total: parseFloat(tribM[9].replace(/\./g, '').replace(',', '.')) || 0,
+        };
+      }
+
+      if(valor > 0){
+        const nx = novoAnexo(cod, valor, redIcmsPct, tributosOficiais);
+        nx.valorMesOriginal = valor;
+        novasAtividades.push(nx);
+      }
+    });
+
+    // Se for Recibo de Entrega (contém apenas Receita Bruta Auferida no mês)
+    if(novasAtividades.length === 0){
+      const reciboFatM = fullText.match(/Receita Bruta Auferida[\s\S]*?R\$\s*([\d\.,]+)/i) ||
+                         cleanText.match(/Total do Estabelecimento[^\d]*([\d\.,]+)/i);
+      if(reciboFatM){
+        const valRec = parseFloat(reciboFatM[1].replace(/\./g, '').replace(',', '.')) || 0;
+        if(valRec > 0){
+          const nx = novoAnexo('I', valRec);
+          nx.valorMesOriginal = valRec;
+          novasAtividades.push(nx);
+        }
+      }
+    }
+
+    // Se por algum motivo o bloco não discriminou valor individual mas temos o total geral da declaração
+    if(novasAtividades.length === 0 && fatTotalDeclaracao > 0){
+      const nx = novoAnexo('I', fatTotalDeclaracao);
+      nx.valorMesOriginal = fatTotalDeclaracao;
+      novasAtividades.push(nx);
+    }
+
+    // O RBT12 agora é calculado pelo histórico; se ele ainda estiver zerado, usa o RBT12 do PDF como base
+    if(extractedRbt12 > 0 && historico.every(v=>!v)){ fillHist(extractedRbt12); }
+
+    if(novasAtividades.length > 0){
+      anexos = novasAtividades;
+      buildAnexosUI();
+    }
+
+    update();
+    statusEl.textContent = '✓ PDF importado com sucesso (' + (novasAtividades.length > 0 ? novasAtividades.length + ' atividade(s)' : 'RBT12 extraído') + ')!';
+    statusEl.style.color = '#85E3B3';
+    setTimeout(()=>{ statusEl.textContent = ''; }, 6000);
+
+  } catch(err) {
+    console.error(err);
+    statusEl.textContent = 'Erro ao ler o PDF: ' + (err.message || 'Arquivo inválido');
+    statusEl.style.color = '#FFAAA6';
+  }
+});
 </script>
 
 </body>
