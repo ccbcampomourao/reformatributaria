@@ -1,0 +1,422 @@
+{
+  "versao": 1,
+  "salvoEm": "2026-10-01T00:41:22.276Z",
+  "mesInicial": "2025-09",
+  "historico": [
+    31065,
+    26045,
+    26850,
+    30200,
+    26485,
+    25377,
+    18201,
+    19807,
+    30900,
+    29953,
+    64150,
+    43923
+  ],
+  "aliquotas": {
+    "ibs": 18.7,
+    "cbs": 9.21,
+    "preset": "ref2026"
+  },
+  "meses": [
+    {
+      "mes": "set/2025",
+      "faturamento": 44045,
+      "rbt12": 372956,
+      "entradas": 10546.02,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 971.29,
+      "creditoIbs": 1972.11,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 14555,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 22130,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 7360,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "out/2025",
+      "faturamento": 64656,
+      "rbt12": 385936,
+      "entradas": 35336.26,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 3254.47,
+      "creditoIbs": 6607.88,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 24340,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 34840,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 5476,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "nov/2025",
+      "faturamento": 58010,
+      "rbt12": 424547,
+      "entradas": 65007.39,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 5987.18,
+      "creditoIbs": 12156.38,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 15120,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 37090,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 5800,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "dez/2025",
+      "faturamento": 62700,
+      "rbt12": 455707,
+      "entradas": 59116.21,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 5444.6,
+      "creditoIbs": 11054.73,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 16020,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 38765,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 7915,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "jan/2026",
+      "faturamento": 41110,
+      "rbt12": 488207,
+      "entradas": 29730.15,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 2738.15,
+      "creditoIbs": 5559.54,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 18040,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 17310,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 5760,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "fev/2026",
+      "faturamento": 31918,
+      "rbt12": 502832,
+      "entradas": 1192.35,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 109.82,
+      "creditoIbs": 222.97,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 8400,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 14840,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 8678,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "mar/2026",
+      "faturamento": 35300,
+      "rbt12": 509373,
+      "entradas": 4004.01,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 368.77,
+      "creditoIbs": 748.75,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 8520,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 22200,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 4580,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "abr/2026",
+      "faturamento": 21680,
+      "rbt12": 526472,
+      "entradas": 7599.2,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 699.89,
+      "creditoIbs": 1421.05,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 6895,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 9775,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 5010,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "mai/2026",
+      "faturamento": 18808,
+      "rbt12": 528345,
+      "entradas": 0,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 0,
+      "creditoIbs": 0,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 2980,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 13908,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 1920,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "jun/2026",
+      "faturamento": 26845,
+      "rbt12": 516253,
+      "entradas": 0,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 0,
+      "creditoIbs": 0,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 2290,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 21320,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 3235,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "jul/2026",
+      "faturamento": 34880,
+      "rbt12": 513145,
+      "entradas": 11580.88,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 1066.6,
+      "creditoIbs": 2165.62,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 7300,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 25855,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 1725,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    },
+    {
+      "mes": "ago/2026",
+      "faturamento": 48525,
+      "rbt12": 483875,
+      "entradas": 71369.56,
+      "geraCreditoCbs": true,
+      "geraCreditoIbs": true,
+      "creditoCbs": 6573.14,
+      "creditoIbs": 13346.11,
+      "anexos": [
+        {
+          "codigo": "I",
+          "valorMes": 12230,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "I_ST",
+          "valorMes": 30690,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        },
+        {
+          "codigo": "III",
+          "valorMes": 5605,
+          "redIcmsPct": null,
+          "tributosOficiais": null,
+          "valorMesOriginal": null
+        }
+      ]
+    }
+  ]
+}
