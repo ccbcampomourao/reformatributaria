@@ -549,6 +549,11 @@
   .gh-item:hover{border-color:var(--forest);background:#F1F6F3;}
   .gh-item small{color:var(--ink-soft);white-space:nowrap;}
   @media print{#ghModal{display:none !important;}}
+
+  .gh-box{overflow-y:auto;}
+  .gh-lb{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink);margin-bottom:10px;}
+  .gh-lb input{padding:9px 10px;border:1px solid var(--paper-line);border-radius:6px;font-family:inherit;font-size:13px;}
+  .gh-chk{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:10px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -563,6 +568,7 @@
   <button type="button" id="pdfAno" class="side-btn">📄 Relatório 12 meses</button>
   <div class="side-h" style="margin-top:14px;">Dados</div>
   <button type="button" id="saveJson" class="side-btn">⬇ Salvar JSON</button>
+  <button type="button" id="saveGh" class="side-btn">☁ Salvar no GitHub</button>
   <button type="button" id="loadBtn" class="side-btn">⬆ Carregar JSON</button>
   <input type="file" id="loadJson" accept="application/json,.json" style="display:none;">
   <div id="jsonStatus" style="font-size:11px;margin-top:8px;min-height:14px;"></div></div>
@@ -1518,7 +1524,7 @@ async function listarGithub(m, fechar, manual){
       b.onclick = async ()=>{
         b.disabled = true;
         try{
-          const rr = await fetch(f.download_url);
+          const rr = await fetch(f.url, {headers:{Accept:'application/vnd.github.raw+json'}});
           if(!rr.ok) throw new Error('erro ' + rr.status);
           const txt = await rr.text(); fechar(); await carregarTexto(txt);
         } catch(err){ fechar(); jsonStatus('Erro ao baixar: ' + err.message, false); }
@@ -1527,6 +1533,69 @@ async function listarGithub(m, fechar, manual){
     });
   } catch(err){ lista.textContent = 'Não foi possível listar os arquivos: ' + err.message + '.'; }
 }
+function abrirSalvarGh(){
+  document.querySelectorAll('#ghModal').forEach(n=> n.remove());
+  let tok = '', rep = '';
+  try{ tok = localStorage.getItem('gh_token') || ''; rep = localStorage.getItem('gh_repo') || ''; } catch(e){}
+  const m = document.createElement('div'); m.id = 'ghModal';
+  m.innerHTML = '<div class="gh-box"><div class="gh-head"><strong>Salvar no GitHub</strong><button type="button" class="gh-x">✕</button></div>'+
+    '<div class="gh-sub">Grava o JSON direto no repositório (cria ou substitui o arquivo).</div>'+
+    '<label class="gh-lb">Repositório<input type="text" id="ghRepoS" placeholder="usuario/repositorio"></label>'+
+    '<label class="gh-lb">Pasta (opcional)<input type="text" id="ghPastaS" placeholder="raiz do repositório"></label>'+
+    '<label class="gh-lb">Nome do arquivo<input type="text" id="ghNome"></label>'+
+    '<label class="gh-lb">Token de acesso do GitHub<input type="password" id="ghTok" autocomplete="off"></label>'+
+    '<label class="gh-chk"><input type="checkbox" id="ghLembrar"> Lembrar token neste navegador</label>'+
+    '<div class="gh-sub">Crie o token em <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a> (Fine-grained), com acesso só a este repositório e permissão <b>Contents: Read and write</b>. O token fica apenas neste navegador. Nunca o coloque no código nem no repositório.</div>'+
+    '<div id="ghMsg" style="font-size:12px;min-height:16px;margin-bottom:8px;"></div>'+
+    '<button type="button" class="nav-btn primary" id="ghSalvar" style="width:100%;">Salvar no GitHub</button></div>';
+  document.body.appendChild(m);
+  m.querySelector('#ghRepoS').value = rep || ghRepo();
+  m.querySelector('#ghPastaS').value = GH_PASTA;
+  m.querySelector('#ghNome').value = 'comparador-ibs-cbs-' + (el('mesInicial').value || 'dados') + '.json';
+  m.querySelector('#ghTok').value = tok;
+  m.querySelector('#ghLembrar').checked = !!tok;
+  m.addEventListener('click', e=>{ if(e.target === m) m.remove(); });
+  m.querySelector('.gh-x').onclick = ()=> m.remove();
+  m.querySelector('#ghSalvar').onclick = ()=> salvarGh(m);
+}
+async function salvarGh(m){
+  const q = id=> m.querySelector(id), msg = q('#ghMsg'), btn = q('#ghSalvar');
+  const repo = q('#ghRepoS').value.trim(), tok = q('#ghTok').value.trim();
+  const pasta = q('#ghPastaS').value.trim().replace(/^\/+|\/+$/g, '');
+  let nome = q('#ghNome').value.trim();
+  if(nome && !/\.json$/i.test(nome)) nome += '.json';
+  const erro = t=>{ msg.style.color = 'var(--red-debit)'; msg.textContent = t; };
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)) return erro('Informe o repositório no formato usuario/repositorio.');
+  if(!nome || /[\/\\]/.test(nome)) return erro('Informe um nome de arquivo válido (sem barras).');
+  if(!tok) return erro('Informe o token de acesso.');
+  const path = (pasta ? pasta + '/' : '') + nome;
+  const url = 'https://api.github.com/repos/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+  const hd = {Accept:'application/vnd.github+json', Authorization:'Bearer ' + tok};
+  btn.disabled = true; msg.style.color = 'var(--ink-soft)'; msg.textContent = 'Salvando…';
+  try{
+    let sha;
+    const g = await fetch(url, {headers:hd});
+    if(g.ok){
+      sha = (await g.json()).sha;
+      if(!confirm('O arquivo "' + path + '" já existe no repositório. Substituir?')){ msg.textContent = ''; btn.disabled = false; return; }
+    } else if(g.status === 401) throw new Error('token inválido ou expirado');
+    else if(g.status !== 404) throw new Error('erro ' + g.status + ' ao verificar o arquivo');
+    const txt = JSON.stringify(serializar(), null, 2);
+    const body = {message:'Atualiza ' + nome + ' pelo comparador', content: btoa(unescape(encodeURIComponent(txt)))};
+    if(sha) body.sha = sha;
+    const r = await fetch(url, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, hd), body:JSON.stringify(body)});
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(r.status === 401 ? 'token inválido ou expirado' : (r.status === 403 || r.status === 404) ? 'sem permissão de escrita ou repositório não encontrado (confira o token e o nome do repositório)' : (e.message || 'erro ' + r.status));
+    }
+    try{
+      if(q('#ghLembrar').checked){ localStorage.setItem('gh_token', tok); localStorage.setItem('gh_repo', repo); }
+      else { localStorage.removeItem('gh_token'); localStorage.removeItem('gh_repo'); }
+    } catch(e){}
+    m.remove(); jsonStatus('✓ Salvo no GitHub: ' + path, true);
+  } catch(err){ erro('Não foi possível salvar: ' + err.message + '.'); btn.disabled = false; }
+}
+el('saveGh').addEventListener('click', abrirSalvarGh);
 el('loadBtn').addEventListener('click', abrirCarregar);
 function entradasDe(j){
   return j===cur ? {e:parseMoney(el('entradasRS').value), c:el('credCbsChk').checked, i:el('credIbsChk').checked}
