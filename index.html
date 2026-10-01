@@ -538,6 +538,17 @@
   .scenario-card .figure small{white-space:nowrap;}
   .delta{border-radius:12px;line-height:1.45;}
   .side-btn{white-space:nowrap;}
+
+  #ghModal{position:fixed;inset:0;background:rgba(15,46,34,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .gh-box{background:#fff;border-radius:12px;padding:20px 22px;width:100%;max-width:460px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.3);}
+  .gh-head{display:flex;justify-content:space-between;align-items:center;font-family:'Source Serif 4',serif;font-size:18px;color:var(--forest-deep);margin-bottom:4px;}
+  .gh-x{background:none;border:0;font-size:16px;cursor:pointer;color:var(--ink-soft);}
+  .gh-sub{font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;word-break:break-all;}
+  .gh-list{overflow-y:auto;font-size:13px;color:var(--ink-soft);display:flex;flex-direction:column;gap:8px;line-height:1.5;}
+  .gh-item{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--paper-line);background:#FBFAF6;border-radius:8px;font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;text-align:left;}
+  .gh-item:hover{border-color:var(--forest);background:#F1F6F3;}
+  .gh-item small{color:var(--ink-soft);white-space:nowrap;}
+  @media print{#ghModal{display:none !important;}}
 </style>
 </head>
 <body>
@@ -552,7 +563,7 @@
   <button type="button" id="pdfAno" class="side-btn">📄 Relatório 12 meses</button>
   <div class="side-h" style="margin-top:14px;">Dados</div>
   <button type="button" id="saveJson" class="side-btn">⬇ Salvar JSON</button>
-  <label for="loadJson" class="side-btn">⬆ Carregar JSON</label>
+  <button type="button" id="loadBtn" class="side-btn">⬆ Carregar JSON</button>
   <input type="file" id="loadJson" accept="application/json,.json" style="display:none;">
   <div id="jsonStatus" style="font-size:11px;margin-top:8px;min-height:14px;"></div></div>
 </aside>
@@ -1318,6 +1329,10 @@ document.querySelectorAll('.toggle-btn').forEach(btn=>{
 // RBT12: R$ 483.875,00 | Faturamento total no mês: R$ 48.525,00
 // ===== Meses, histórico e JSON =====
 const el = id => document.getElementById(id);
+// Se a página estiver no GitHub Pages (usuario.github.io/repo), o repositório é detectado sozinho.
+// Em domínio próprio ou fora do GitHub, preencha aqui (ex.: 'usuario/repositorio') ou informe na janela de carregar.
+const GH_REPO = '';
+const GH_PASTA = ''; // pasta dos JSON dentro do repositório ('' = raiz; ex.: 'dados')
 const MN = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 let historico = [40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.92,40322.88];
 let cur = 0; // -1 = aba Histórico; 0..11 = meses
@@ -1421,11 +1436,9 @@ el('saveJson').addEventListener('click', ()=>{
   setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
   jsonStatus('✓ JSON salvo', true);
 });
-el('loadJson').addEventListener('change', async (e)=>{
-  const f = e.target.files[0]; e.target.value = '';
-  if(!f) return;
+async function carregarTexto(txt){
   try{
-    const d = JSON.parse(await f.text());
+    const d = JSON.parse(txt);
     if(!Array.isArray(d.historico) || d.historico.length !== 12 || !Array.isArray(d.meses) || d.meses.length !== 12) throw new Error('estrutura inválida');
     const novos = d.meses.map(m=>{
       const lista = (m.anexos || []).map(a=>{
@@ -1452,7 +1465,69 @@ el('loadJson').addEventListener('change', async (e)=>{
   } catch(err){
     jsonStatus('Erro ao carregar: ' + err.message, false);
   }
+}
+el('loadJson').addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; e.target.value = '';
+  if(f) carregarTexto(await f.text());
 });
+
+function ghRepo(){
+  if(GH_REPO) return GH_REPO;
+  const h = location.hostname;
+  if(h.endsWith('.github.io')){
+    const seg = location.pathname.split('/').filter(Boolean)[0];
+    return h.split('.')[0] + '/' + (seg && !/\.html?$/i.test(seg) ? seg : h);
+  }
+  return '';
+}
+function abrirCarregar(){
+  document.querySelectorAll('#ghModal').forEach(n=> n.remove());
+  const m = document.createElement('div'); m.id = 'ghModal';
+  m.innerHTML = '<div class="gh-box"><div class="gh-head"><strong>Carregar JSON</strong><button type="button" class="gh-x">✕</button></div>'+
+    '<div class="gh-sub" id="ghSub">Arquivos .json do repositório no GitHub</div><div class="gh-list" id="ghList">Buscando arquivos…</div>'+
+    '<button type="button" class="nav-btn" id="ghLocal" style="width:100%;margin-top:14px;">Escolher arquivo do computador</button></div>';
+  document.body.appendChild(m);
+  const fechar = ()=> m.remove();
+  m.addEventListener('click', e=>{ if(e.target === m) fechar(); });
+  m.querySelector('.gh-x').onclick = fechar;
+  m.querySelector('#ghLocal').onclick = ()=>{ fechar(); el('loadJson').click(); };
+  listarGithub(m, fechar, '');
+}
+async function listarGithub(m, fechar, manual){
+  const repo = manual || ghRepo(), lista = m.querySelector('#ghList');
+  if(!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)){
+    lista.innerHTML = '<div>'+(manual ? 'Formato inválido. ' : 'Repositório não identificado automaticamente. ')+'Informe <b>usuario/repositorio</b> (precisa ser público):</div>'+
+      '<input type="text" id="ghRepoIn" placeholder="usuario/repositorio" style="padding:9px 10px;border:1px solid var(--paper-line);border-radius:6px;font-family:inherit;font-size:13px;">'+
+      '<button type="button" class="nav-btn primary" id="ghGo">Buscar</button>';
+    m.querySelector('#ghGo').onclick = ()=> listarGithub(m, fechar, m.querySelector('#ghRepoIn').value.trim());
+    return;
+  }
+  m.querySelector('#ghSub').textContent = 'github.com/' + repo + (GH_PASTA ? '/' + GH_PASTA : '');
+  lista.textContent = 'Buscando arquivos…';
+  try{
+    const r = await fetch('https://api.github.com/repos/' + repo + '/contents/' + GH_PASTA, {headers:{Accept:'application/vnd.github+json'}});
+    if(!r.ok) throw new Error(r.status === 403 ? 'limite de consultas do GitHub atingido, tente novamente mais tarde' : r.status === 404 ? 'repositório ou pasta não encontrado (o repositório precisa ser público)' : 'erro ' + r.status);
+    const arqs = (await r.json()).filter(f=> f.type === 'file' && /\.json$/i.test(f.name));
+    if(!arqs.length){ lista.textContent = 'Nenhum arquivo .json encontrado nessa pasta do repositório.'; return; }
+    lista.innerHTML = '';
+    arqs.forEach(f=>{
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'gh-item';
+      const nome = document.createElement('span'); nome.textContent = '📄 ' + f.name;
+      const tam = document.createElement('small'); tam.textContent = (f.size/1024).toFixed(1).replace('.', ',') + ' KB';
+      b.append(nome, tam);
+      b.onclick = async ()=>{
+        b.disabled = true;
+        try{
+          const rr = await fetch(f.download_url);
+          if(!rr.ok) throw new Error('erro ' + rr.status);
+          const txt = await rr.text(); fechar(); await carregarTexto(txt);
+        } catch(err){ fechar(); jsonStatus('Erro ao baixar: ' + err.message, false); }
+      };
+      lista.appendChild(b);
+    });
+  } catch(err){ lista.textContent = 'Não foi possível listar os arquivos: ' + err.message + '.'; }
+}
+el('loadBtn').addEventListener('click', abrirCarregar);
 function entradasDe(j){
   return j===cur ? {e:parseMoney(el('entradasRS').value), c:el('credCbsChk').checked, i:el('credIbsChk').checked}
                  : {e:meses[j].entradas, c:meses[j].credCbs, i:meses[j].credIbs};
